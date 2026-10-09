@@ -1,42 +1,40 @@
-def read():
-    P1=open("Graphe/P1.csv")
+def lire_champs(ligne): #verifie que le csv contien 4 champs
+    champs = ligne.strip().split(";")
+    if len(champs) != 4:
+        exit("Erreur dans le fichier CSV.")
+    return champs
 
-    ligne = P1.readline()
+def verifier_tache(champs, num_ligne): #verifie que le csv est en Chiffre;Nom;Chiffre;Chiffre
+    id_, description, duree, precedentes = champs
 
-    #recuperer la premiere ligne du csv
-    if not ligne.strip().isdigit() :
-        print("Le nombre de tache du CSV n'est pas indiqué")
-        exit()
-    nb_task =  int(ligne.strip())
-
-    #Vérification en-tête
-    ligne=P1.readline()
-    if (len(ligne.strip().split(";")) != 4) : 
-        print ("Erreur dans le fichier CSV.")
-        exit()
-    graphe={}
-    #verifier le nombre de champ par ligne
-    for i in  range (nb_task) :
-        ligne=P1.readline()
-        if (len(ligne.strip().split(";")) != 4) : 
-            print ("Erreur dans le fichier CSV.")
-            exit()
-        champ = ligne.strip().split(";")
-        precedente=champ[3].strip().split(",")
-        liste_champ3=[]
-        
-        for j in range (len(precedente)) :
-            if precedente[j] == "" :
-                pass
-            else :
-                liste_champ3.append(int(precedente[j]))
-            
-        graphe[int(champ[0])] = {"description":champ[1], 
-                                "duree":int(champ[2]), 
-                                "precedente":liste_champ3 
-                                }
-
-    return graphe
+    if not id_.isdigit():
+        exit(f"Ligne {num_ligne} : l'ID '{id_}' n'est pas un nombre.")
+    if not description.isalpha():
+        exit(f"Ligne {num_ligne} : la description '{description}' est invalide.")
+    if not duree.isdigit():
+        exit(f"Ligne {num_ligne} : la durée '{duree}' n'est pas un nombre.")
+    if precedentes and not all(p.strip().isdigit() for p in precedentes.split(",")):
+        exit(f"Ligne {num_ligne} : prédécesseurs invalides '{precedentes}'.")
 
 
-    
+def read(chemin="Graphe/P1.csv"):
+    with open(chemin) as csvfile:
+        premiere = csvfile.readline().strip()
+        if not premiere.isdigit():
+            exit("Le nombre de tache du CSV n'est pas indiqué")
+        nb_task = int(premiere)
+
+        lire_champs(csvfile.readline())  # en-tête
+
+        graphe = {}
+        for i in range(nb_task):
+            champs = lire_champs(csvfile.readline())
+            verifier_tache(champs, i + 3)  # +3 parce graphe commence a ligne 3
+            id_, description, duree, precedentes = champs
+            graphe[int(id_)] = {
+                "description": description,
+                "duree": int(duree),
+                "precedente": [int(p) for p in precedentes.split(",") if p], #Je vais pas mentir cette ligne était hard
+            }
+
+    return nb_task, graphe
