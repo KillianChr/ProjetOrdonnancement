@@ -1,6 +1,7 @@
 import csv
 from graphlib import CycleError
 
+# Vérification de la validité du graph
 
 try:
     #fonction()
