@@ -1,5 +1,8 @@
 from read import read 
+from bellman import calculDateAuPlusTot
 
-graphe=read()
+# graphe=read()
 
-print(graphe)
+# print(graphe)
+
+calculDateAuPlusTot()
