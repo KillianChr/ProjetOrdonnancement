@@ -1,7 +1,7 @@
 def read():
     P1=open("Graphe/P1.csv")
 
-    ligne = P1.readline()
+    ligne=P1.readline()
 
     #recuperer la premiere ligne du csv
     if not ligne.strip().isdigit() :
