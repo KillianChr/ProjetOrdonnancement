@@ -5,10 +5,10 @@ def lire_champs(ligne): #verifie que le csv contien 4 champs
     return champs
 
 def verifier_tache(champs, num_ligne): #verifie que le csv est en Chiffre;Nom;Chiffre;Chiffre
-    id_, description, duree, precedentes = champs
+    id, description, duree, precedentes = champs
 
-    if not id_.isdigit():
-        exit(f"Ligne {num_ligne} : l'ID '{id_}' n'est pas un nombre.")
+    if not id.isdigit():
+        exit(f"Ligne {num_ligne} : l'ID '{id}' n'est pas un nombre.")
     if not description.isalpha():
         exit(f"Ligne {num_ligne} : la description '{description}' est invalide.")
     if not duree.isdigit():
@@ -30,8 +30,8 @@ def read(chemin="Graphe/P1.csv"):
         for i in range(nb_task):
             champs = lire_champs(csvfile.readline())
             verifier_tache(champs, i + 3)  # +3 parce graphe commence a ligne 3
-            id_, description, duree, precedentes = champs
-            graphe[int(id_)] = {
+            id, description, duree, precedentes = champs
+            graphe[int(id)] = {
                 "description": description,
                 "duree": int(duree),
                 "precedente": [int(p) for p in precedentes.split(",") if p], #Je vais pas mentir cette ligne était hard
