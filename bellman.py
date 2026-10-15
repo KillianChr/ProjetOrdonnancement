@@ -23,6 +23,12 @@ def datesAuPlusTot(taches):
         raise ValueError("Dépendances circulaires")
     return s
 
+def datesAuPlusTotTacheX(x):
+    taches = read()
+    if x not in taches:
+        raise ValueError(f"La tâche {x} n'existe pas")
+    return datesAuPlusTot(taches)[x]
+
 def calculDateAuPlusTot():
     taches = read()
     s = datesAuPlusTot(taches)
