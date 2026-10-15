@@ -24,13 +24,13 @@ def datesAuPlusTot(taches):
     return s
 
 def datesAuPlusTotTacheX(x):
-    taches = read()
+    nb, taches = read()
     if x not in taches:
         raise ValueError(f"La tâche {x} n'existe pas")
     return datesAuPlusTot(taches)[x]
 
 def calculDateAuPlusTot():
-    taches = read()
+    nb, taches = read()
     s = datesAuPlusTot(taches)
 
     # Test qui affiche chaque tâche avec son début au plus tot

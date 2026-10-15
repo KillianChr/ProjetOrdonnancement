@@ -4,7 +4,8 @@ def lire_champs(ligne, num_ligne): #verifie que le csv contien 4 champs exacteme
         exit(f"Ligne {num_ligne} : {len(champs)} champs trouvés au lieu de 4.")
     return champs
 
-    ligne=P1.readline()
+def verifier_tache(champs, num_ligne): #verifie que le csv est en Chiffre;Nom;Chiffre;Chiffre
+    id, description, duree, precedentes = champs
 
     if not id.isdigit():
         exit(f"Ligne {num_ligne} : l'ID '{id}' n'est pas un nombre.")

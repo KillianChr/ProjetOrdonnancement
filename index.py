@@ -1,11 +1,11 @@
 from read import read 
 from bellman import calculDateAuPlusTot, datesAuPlusTotTacheX
 
-# graphe=read()
+nb_grahpe, graphe=read()
 
-# print(graphe)
-
+print(graphe)
+print(nb_grahpe)
 calculDateAuPlusTot()
 
 # Affiche la date au plus tot de la tache X, il faut que la tache existe sinon clevé de l'erreur
-print(datesAuPlusTotTacheX(5))
+# print(datesAuPlusTotTacheX(5))
