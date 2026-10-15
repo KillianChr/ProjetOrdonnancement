@@ -1,33 +1,40 @@
-def bellman_ford(graph, source):
-    # Step 1: Initialize distances
-    distances = {vertex: float('inf') for vertex in graph}
-    distances[source] = 0
+from read import read
 
-    # Step 2: Relax edges |V| - 1 times
-    for _ in range(len(graph) - 1):
-        for u in graph:
-            for v, weight in graph[u].items():
-                if distances[u] != float('inf') and distances[u] + weight < distances[v]:
-                    distances[v] = distances[u] + weight
+def datesAuPlusTot(taches):
+    # Arcs (i, j, q) : j ne peut pas commencer avant la fin de i, donc q = duree de i
+    # j = id de la tache, t = infos de la tâche en question, i = les prédécesseurs de j
+    arcs = [(i, j, taches[i]["duree"]) for j, t in taches.items() for i in t["precedente"]]
 
-    # Step 3: Check for negative weight cycles
-    for u in graph:
-        for v, weight in graph[u].items():
-            if distances[u] != float('inf') and distances[u] + weight < distances[v]:
-                raise ValueError("Graph contains negative weight cycle")
+    s = {i: 0 for i in taches}
+    n = len(taches)
+    k = 0
 
-    return distances
+    while True:
+        k += 1
+        c = False
+        for i, j, q in arcs:
+            if s[j] < s[i] + q:
+                s[j] = s[i] + q
+                c = True
+        if not c or k == n:
+            break
 
+    if c: # Si il y a encore des changements après n tours alors levé de l'exception
+        raise ValueError("Dépendances circulaires")
+    return s
 
-# Example
-graph = {
-    'A': {'B': -1, 'C': 4},
-    'B': {'C': 3, 'D': 2, 'E': 2},
-    'C': {},
-    'D': {'B': 1, 'C': 5},
-    'E': {'D': -3}
-}
-source = 'A'
+def datesAuPlusTotTacheX(x):
+    taches = read()
+    if x not in taches:
+        raise ValueError(f"La tâche {x} n'existe pas")
+    return datesAuPlusTot(taches)[x]
 
-shortest_distances = bellman_ford(graph, source)
-print(shortest_distances)
+def calculDateAuPlusTot():
+    taches = read()
+    s = datesAuPlusTot(taches)
+
+    # Test qui affiche chaque tâche avec son début au plus tot
+    # for i in taches:
+    #     print(f"{i}; {taches[i]['description']}; {s[i]}")
+
+    print("Durée totale :", max(s[i] + taches[i]["duree"] for i in taches))

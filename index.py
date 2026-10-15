@@ -1,6 +1,11 @@
-from read import read
+from read import read 
+from bellman import calculDateAuPlusTot, datesAuPlusTotTacheX
 
-nb_task, graphe =read("Graphe/P1.csv")
+# graphe=read()
 
-print(nb_task)
-print(graphe)
+# print(graphe)
+
+calculDateAuPlusTot()
+
+# Affiche la date au plus tot de la tache X, il faut que la tache existe sinon clevé de l'erreur
+print(datesAuPlusTotTacheX(5))
