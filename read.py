@@ -38,3 +38,25 @@ def read(chemin="Graphe/P1.csv"):
             }
 
     return nb_task, graphe
+
+def inverser(graphe, nb): #Inverse Strictement le graphe (même les 'precedente')
+    nouveau = lambda t: nb + 1 - t 
+
+    #Inversion total du graphe sans les 'precendente' en fonction de lambda du graphe
+    inverse = {
+        nouveau(t): {
+            'description': graphe[t]['description'],
+            'duree': graphe[t]['duree'],
+            'precedente': [],
+        }
+        for t in sorted(graphe, reverse=True) #Remet les id dans l'odre voulu
+    }
+    #Inverse les 'precedente' en fonction de t & p (a retenir 'nouveau' est l'inverse exact)
+    #sur on regarde la case graphe.id =10 alors nouveau(10) = 1 donc id =1 nouveau(6) = 5
+    for t, info in graphe.items():
+        for p in info['precedente']:
+            inverse[nouveau(p)]['precedente'].append(nouveau(t))
+
+    for info in inverse.values(): #Sert peut-être (JSP comment le script de bellman fonctionne exactement)
+        info['precedente'].sort() #Sinon cela sert juste a remettre les 'precedente' dnas l'ordre croissant
+    return inverse

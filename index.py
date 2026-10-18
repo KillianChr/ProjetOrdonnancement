@@ -1,10 +1,11 @@
-from read import read 
+from read import read, inverser
 from graphValide import verifier_graphe
 from bellman import calculDateAuPlusTot, datesAuPlusTotTacheX
 
 # graphe=read()
 
 nb_task,graphe=read()
+graphe_inverse=inverser(graphe, nb_task)
 
 # print(graphe)
 if verifier_graphe(graphe):
