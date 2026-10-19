@@ -1,17 +1,13 @@
-from read import read 
+from read import read
 from graphValide import verifier_graphe
-from bellman import calculDateAuPlusTot, datesAuPlusTotTacheX
+from ordonnancement import dureeProjet, datesAuPlusTotTacheX
 
-# graphe=read()
+nb_task, graphe = read()
 
-nb_task,graphe=read()
-
-# print(graphe)
 if verifier_graphe(graphe):
-    calculDateAuPlusTot(graphe)
+    print("Durée totale :", dureeProjet(graphe))
 
-    # Affiche la date au plus tot de la tache X, il faut que la tache existe sinon clevé de l'erreur
-    print(datesAuPlusTotTacheX(5,graphe))
+    # Affiche la date au plus tôt de la tâche X
+    print(datesAuPlusTotTacheX(5, graphe))
 else:
     print("Graphe Invalide")
-
