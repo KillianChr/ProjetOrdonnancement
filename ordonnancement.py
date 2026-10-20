@@ -1,5 +1,5 @@
 
-from bellman import bellman
+from bellman import bellman, bellman_inverse
 
 def datesAuPlusTot(taches):
     # Construction des arcs à partir des précédences
@@ -12,7 +12,7 @@ def datesAuPlusTot(taches):
     s = {i: 0 for i in taches}
     n = len(taches)
 
-    return bellman(arcs, s, n)
+    return bellman_inverse(arcs, s, n)
 
 
 def datesAuPlusTotTacheX(x, taches):
