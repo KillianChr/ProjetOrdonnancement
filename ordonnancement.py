@@ -58,3 +58,15 @@ def datesTacheX(x,taches,fonctionDate):
         raise ValueError(f"La tâche {x} n'existe pas")
 
     return fonctionDate(taches)[x]
+
+
+def margesTaches(taches):
+    dateTot = datesAuPlusTot(taches)
+    dateTard = datesAuPlusTard(taches)
+
+    marges = []
+
+    for i in taches:
+        marges.append(dateTard[i] - dateTot[i])
+
+    return marges
