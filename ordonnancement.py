@@ -64,9 +64,13 @@ def margesTaches(taches):
     dateTot = datesAuPlusTot(taches)
     dateTard = datesAuPlusTard(taches)
 
-    marges = []
+    marges = {}
 
     for i in taches:
-        marges.append(dateTard[i] - dateTot[i])
+        marges[i]=dateTard[i] - dateTot[i]
 
     return marges
+
+def tachesCritique(margesTache):
+
+    if
