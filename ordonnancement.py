@@ -71,6 +71,12 @@ def margesTaches(taches):
 
     return marges
 
-def tachesCritique(margesTache):
+def tachesCritique(margesTaches):
 
-    if
+    taches = []
+    for i in margesTaches :
+        if margesTaches[i]==0 :
+            taches.append(i)
+    return taches
+
+        
