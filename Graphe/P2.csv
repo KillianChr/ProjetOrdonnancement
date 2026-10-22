@@ -1,0 +1,7 @@
+5
+ID;Description;Duree;Precedentes
+1;A;1;
+2;B;3;
+3;C;1;
+4;D;2;1,2
+5;E;1;
