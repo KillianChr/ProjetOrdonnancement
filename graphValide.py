@@ -27,7 +27,9 @@ def verifier_graphe(graphe):
             if graphe[i]["duree"] <= 0:
                 return False
                 
-        TopologicalSorter(precedente).static_order()
+        # list() est indispensable : static_order() ne calcule rien tant qu'on ne parcourt
+        # pas son résultat, donc sans lui les cycles ne sont jamais détectés
+        list(TopologicalSorter(precedente).static_order())
 
         if not tacheInitial:
             return False
