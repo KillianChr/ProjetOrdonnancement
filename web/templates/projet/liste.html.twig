@@ -1,0 +1,28 @@
+{# Page d'accueil : liste des projets. #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Projets — Ordonnancement{% endblock %}
+
+{% block body %}
+    <h1>Projets</h1>
+
+    {% if projets is empty %}
+        <div class="vide">
+            <p>Aucun projet pour l'instant.</p>
+            <a href="{{ path('projet_nouveau') }}" class="bouton">Créer le premier projet</a>
+        </div>
+    {% else %}
+        <div class="grille-projets">
+            {% for projet in projets %}
+                <a href="{{ path('projet_detail', {id: projet.id}) }}" class="carte">
+                    <h2>{{ projet.nom }}</h2>
+                    {% if projet.description %}<p>{{ projet.description }}</p>{% endif %}
+                    <p class="discret">
+                        {{ projet.taches|length }} tâche{{ projet.taches|length > 1 ? 's' }}
+                        · créé le {{ projet.dateCreation|date('d/m/Y') }}
+                    </p>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
