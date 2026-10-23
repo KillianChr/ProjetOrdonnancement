@@ -1,0 +1,117 @@
+/* ==========================================================
+   Styles de l'application (volontairement simples : squelette)
+   Les couleurs sont regroupées ici pour être faciles à changer.
+   ========================================================== */
+:root {
+    --fond: #f6f7f9;
+    --surface: #ffffff;
+    --texte: #1f2430;
+    --discret: #6b7280;
+    --bordure: #e3e6eb;
+    --principal: #2f6fde;
+    --critique: #d64545;
+    --critique-fond: #fdecec;
+    --succes-fond: #e7f6ec;
+    --succes: #1e7a3c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--fond);
+    color: var(--texte);
+    line-height: 1.5;
+}
+
+a { color: var(--principal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { margin: 0 0 .5rem; }
+h2 { margin: 0; font-size: 1.2rem; }
+section { margin-top: 2rem; }
+.discret { color: var(--discret); font-size: .9rem; }
+
+/* ---------- En-tête et mise en page ---------- */
+.entete {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .8rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--bordure);
+}
+.entete nav { display: flex; gap: 1rem; align-items: center; }
+.logo { font-weight: 700; color: var(--texte); }
+.contenu { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+.fil { margin: 0 0 .5rem; }
+
+/* ---------- Boutons ---------- */
+.bouton {
+    display: inline-block; padding: .45rem .9rem; border: none; border-radius: 6px;
+    background: var(--principal); color: #fff; font: inherit; cursor: pointer;
+}
+.bouton:hover { text-decoration: none; opacity: .9; }
+.bouton-secondaire { background: var(--surface); color: var(--principal); border: 1px solid var(--principal); }
+.bouton-danger { background: var(--critique); }
+.lien-danger { background: none; border: none; color: var(--critique); cursor: pointer; font: inherit; padding: 0; }
+.actions, .actions-ligne { display: flex; gap: .8rem; align-items: center; }
+.actions form, .actions-ligne form { margin: 0; }
+
+/* ---------- Messages ---------- */
+.flash { padding: .7rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.flash-succes { background: var(--succes-fond); color: var(--succes); }
+.flash-erreur { background: var(--critique-fond); color: var(--critique); }
+.vide { padding: 2rem; text-align: center; background: var(--surface); border: 1px dashed var(--bordure); border-radius: 8px; }
+.aide { background: var(--surface); border-left: 3px solid var(--principal); padding: .5rem 1rem; margin-bottom: 1rem; font-size: .9rem; }
+
+/* ---------- Liste des projets ---------- */
+.grille-projets { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.carte { display: block; padding: 1rem; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; color: var(--texte); }
+.carte:hover { border-color: var(--principal); text-decoration: none; }
+.carte p { margin: .3rem 0 0; }
+
+/* ---------- Détail d'un projet ---------- */
+.titre-projet, .titre-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.titre-section { align-items: center; margin-bottom: .8rem; }
+.resume { display: flex; gap: 1rem; flex-wrap: wrap; }
+.resume > div { flex: 1; min-width: 160px; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; padding: .8rem 1rem; }
+.resume strong { display: block; font-size: 1.8rem; }
+
+/* ---------- Tableau des tâches ---------- */
+.tableau { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--bordure); }
+.tableau th, .tableau td { padding: .5rem .7rem; text-align: left; border-bottom: 1px solid var(--bordure); }
+.tableau th { font-size: .85rem; color: var(--discret); font-weight: 600; }
+.tableau tr.critique td { background: var(--critique-fond); }
+.tableau tr.critique td:first-child { border-left: 3px solid var(--critique); }
+.legende { display: flex; align-items: center; gap: .4rem; }
+.pastille-critique { display: inline-block; width: 12px; height: 12px; background: var(--critique-fond); border-left: 3px solid var(--critique); }
+
+/* ---------- Gantt ---------- */
+.gantt { background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; padding: 1rem; }
+.gantt-ligne { display: flex; align-items: center; gap: .8rem; margin-bottom: .4rem; }
+.gantt-nom { width: 140px; flex-shrink: 0; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gantt-piste { position: relative; flex: 1; height: 22px; background: var(--fond); border-radius: 4px; }
+.gantt-barre { position: absolute; top: 0; bottom: 0; background: var(--principal); border-radius: 4px; }
+.gantt-barre.critique { background: var(--critique); }
+.gantt-axe { display: flex; justify-content: space-between; margin-left: calc(140px + .8rem); font-size: .8rem; color: var(--discret); }
+
+/* ---------- Contraintes ---------- */
+.liste-contraintes { list-style: none; padding: 0; margin: 0; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; }
+.liste-contraintes li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--bordure); }
+.liste-contraintes li:last-child { border-bottom: none; }
+
+/* ---------- Formulaires ---------- */
+.formulaire { max-width: 560px; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; padding: 1.2rem; }
+.formulaire > div, .formulaire fieldset { margin-bottom: 1rem; }
+.formulaire label { display: block; font-weight: 600; margin-bottom: .3rem; }
+.formulaire input[type=text], .formulaire input[type=number], .formulaire textarea, .formulaire select {
+    width: 100%; padding: .5rem; border: 1px solid var(--bordure); border-radius: 6px; font: inherit;
+}
+.formulaire ul { color: var(--critique); margin: .3rem 0; padding-left: 1.2rem; }
+.cases { border: 1px solid var(--bordure); border-radius: 6px; padding: .6rem 1rem; }
+.cases legend label { margin: 0; }
+.cases > label { display: inline-flex; align-items: center; gap: .3rem; font-weight: normal; margin-right: 1rem; }
+
+/* ---------- Téléphone ---------- */
+@media (max-width: 640px) {
+    .tableau { display: block; overflow-x: auto; }
+    .gantt-nom { width: 90px; }
+    .gantt-axe { margin-left: calc(90px + .8rem); }
+}
