@@ -1,0 +1,16 @@
+{# Formulaire de création / modification d'un projet. #}
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ titre }} — Ordonnancement{% endblock %}
+
+{% block body %}
+    <h1>{{ titre }}</h1>
+
+    {{ form_start(form, {attr: {class: 'formulaire'}}) }}
+        {{ form_widget(form) }}
+        <div class="actions">
+            <button type="submit" class="bouton">Enregistrer</button>
+            <a href="{{ path('projet_liste') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}
