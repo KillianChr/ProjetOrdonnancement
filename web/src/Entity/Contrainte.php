@@ -5,28 +5,49 @@ namespace App\Entity;
 use App\Repository\ContrainteRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
- * Contrainte supplémentaire sur un projet (partie P2 du cours).
+ * Contrainte supplémentaire sur un projet, en plus des précédences (cours p.20 à 36).
+ * Utilisable sur n'importe quel projet. Les mêmes types existent côté Python (contraintes.TYPES).
  *
- * Remplace les contraintes aujourd'hui écrites en dur dans contraintes.py :
- *  - DATE_FIXE          : la tâche A commence exactement à la date "valeur"          (ex. S2 = 3)
- *  - DEBUT_APRES_DEBUT  : la tâche B commence après le début de A, + "valeur"         (ex. S5 >= S3 + 0)
- *  - CHEVAUCHEMENT      : les tâches A et B se chevauchent d'au moins 1 unité de temps
+ *  - DATE_FIXE            : A commence exactement à la date "valeur"              (ex. P2 : S2 = 3)
+ *  - DATE_MIN             : A ne commence pas avant la date "valeur"
+ *  - DATE_MAX             : A commence au plus tard à la date "valeur"
+ *  - DEBUT_APRES_DEBUT    : B commence au moins "valeur" après le début de A      (ex. P2 : S5 >= S3)
+ *  - DEBUT_APRES_FIN      : B commence au moins "valeur" après la fin de A        (précédence avec délai)
+ *  - DEBUT_MAX_APRES_FIN  : B commence au plus "valeur" après la fin de A         (ex. cours p.20)
+ *  - CHEVAUCHEMENT        : A et B se chevauchent d'au moins 1 unité de temps     (ex. P2 : 3 et 4)
  */
 #[ORM\Entity(repositoryClass: ContrainteRepository::class)]
 class Contrainte
 {
     public const DATE_FIXE = 'date_fixe';
+    public const DATE_MIN = 'date_min';
+    public const DATE_MAX = 'date_max';
     public const DEBUT_APRES_DEBUT = 'debut_apres_debut';
+    public const DEBUT_APRES_FIN = 'debut_apres_fin';
+    public const DEBUT_MAX_APRES_FIN = 'debut_max_apres_fin';
     public const CHEVAUCHEMENT = 'chevauchement';
 
     /** Libellés affichés dans les formulaires. */
     public const TYPES = [
-        'Date de début fixe' => self::DATE_FIXE,
-        'Commence après le début d\'une autre tâche' => self::DEBUT_APRES_DEBUT,
-        'Chevauchement entre deux tâches' => self::CHEVAUCHEMENT,
+        'A commence exactement à la date X' => self::DATE_FIXE,
+        'A ne commence pas avant la date X' => self::DATE_MIN,
+        'A commence au plus tard à la date X' => self::DATE_MAX,
+        'B commence au moins X après le début de A' => self::DEBUT_APRES_DEBUT,
+        'B commence au moins X après la fin de A' => self::DEBUT_APRES_FIN,
+        'B commence au plus X après la fin de A' => self::DEBUT_MAX_APRES_FIN,
+        'A et B se chevauchent (au moins 1 unité)' => self::CHEVAUCHEMENT,
     ];
+
+    /** Types qui portent sur deux tâches (A et B). */
+    public const TYPES_A_DEUX_TACHES = [
+        self::DEBUT_APRES_DEBUT, self::DEBUT_APRES_FIN, self::DEBUT_MAX_APRES_FIN, self::CHEVAUCHEMENT,
+    ];
+
+    /** Types qui portent sur une date : la valeur X est obligatoire. */
+    public const TYPES_A_DATE = [self::DATE_FIXE, self::DATE_MIN, self::DATE_MAX];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -52,9 +73,35 @@ class Contrainte
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?Tache $tacheB = null;
 
-    /** Valeur numérique : la date pour DATE_FIXE, le délai pour DEBUT_APRES_DEBUT. */
+    /** Valeur X : une date (types à date) ou un délai (types à deux tâches, 0 si vide). */
     #[ORM\Column(nullable: true)]
     private ?int $valeur = null;
+
+    /**
+     * Vérifie que les bons champs sont remplis selon le type choisi
+     * (appelé automatiquement par le validateur de Symfony).
+     */
+    #[Assert\Callback]
+    public function verifierChamps(ExecutionContextInterface $context): void
+    {
+        if (in_array($this->type, self::TYPES_A_DEUX_TACHES, true)) {
+            if (null === $this->tacheB) {
+                $context->buildViolation('Ce type de contrainte porte sur deux tâches : choisissez la tâche B.')
+                    ->atPath('tacheB')->addViolation();
+            } elseif ($this->tacheB === $this->tacheA) {
+                $context->buildViolation('Les tâches A et B doivent être différentes.')
+                    ->atPath('tacheB')->addViolation();
+            }
+        }
+
+        if (in_array($this->type, self::TYPES_A_DATE, true) && null === $this->valeur) {
+            $context->buildViolation('Indiquez la date X.')->atPath('valeur')->addViolation();
+        }
+
+        if (null !== $this->valeur && $this->valeur < 0) {
+            $context->buildViolation('La valeur X doit être positive ou nulle.')->atPath('valeur')->addViolation();
+        }
+    }
 
     public function getId(): ?int
     {

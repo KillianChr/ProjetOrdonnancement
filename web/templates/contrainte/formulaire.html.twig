@@ -8,9 +8,12 @@
     <h1>{{ titre }}</h1>
 
     <div class="aide">
-        <p><strong>Date de début fixe</strong> : la tâche A commence exactement à la date indiquée dans « Valeur ».</p>
-        <p><strong>Après le début d'une tâche</strong> : la tâche B commence au plus tôt « Valeur » unités après le début de la tâche A.</p>
-        <p><strong>Chevauchement</strong> : les tâches A et B se déroulent en même temps pendant au moins 1 unité.</p>
+        <p>Toute contrainte se traduit par un arc ajouté au graphe, comme dans le cours (p. 20 à 36).
+        Si les contraintes sont incompatibles, le projet est signalé comme non réalisable.</p>
+        <p><strong>Une seule tâche (A) + une date X</strong> : « commence exactement à », « pas avant », « au plus tard à ».</p>
+        <p><strong>Deux tâches (A et B) + un délai X</strong> (0 si vide) : « B au moins X après le début / la fin de A », « B au plus X après la fin de A ».<br>
+        Ex. cours : <em>la tâche 6 doit démarrer au plus 2 jours après la fin de la tâche 3</em> → A = 3, B = 6, X = 2.</p>
+        <p><strong>Chevauchement</strong> : A et B se déroulent en même temps pendant au moins 1 unité (X inutile).</p>
     </div>
 
     {{ form_start(form, {attr: {class: 'formulaire'}}) }}

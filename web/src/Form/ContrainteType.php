@@ -16,10 +16,9 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 /**
  * Formulaire d'une contrainte supplémentaire (partie P2).
  *
- * Champs utilisés selon le type :
- *  - Date fixe                 : tâche A + valeur (la date)
- *  - Après le début d'une tâche : tâche A (référence) + tâche B + valeur (délai, 0 par défaut)
- *  - Chevauchement             : tâche A + tâche B
+ * Champs utilisés selon le type (vérifiés par Contrainte::verifierChamps()) :
+ *  - types à date (fixe, min, max) : tâche A + valeur X (la date)
+ *  - types à deux tâches           : tâche A + tâche B (+ valeur X = délai, 0 si vide)
  *
  * TODO : masquer/afficher les champs selon le type choisi (petit contrôleur Stimulus).
  */
@@ -54,7 +53,7 @@ class ContrainteType extends AbstractType
                 'placeholder' => '— aucune —',
             ])
             ->add('valeur', IntegerType::class, [
-                'label' => 'Valeur (date ou délai)',
+                'label' => 'Valeur X (date ou délai)',
                 'required' => false,
             ]);
     }

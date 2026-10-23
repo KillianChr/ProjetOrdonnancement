@@ -24,13 +24,20 @@ use Symfony\Component\Process\Process;
  *    "contraintes": [ {"type": "date_fixe", "tacheA": 2, "tacheB": null, "valeur": 3}, ... ]
  *  }
  *
- * Format attendu en retour :
+ * Format renvoyé par calcul.py (même structure que le resultat.json de index.py) :
  *  {
  *    "realisable": true,
- *    "duree": 22,
- *    "taches": [ {"id": 1, "tot": 0, "tard": 0, "marge": 0, "critique": true}, ... ],
+ *    "duree_projet": 22,
+ *    "taches": {
+ *      "1": {"description": "Murs", "duree": 7, "precedentes": [],
+ *            "date_au_plus_tot": 0, "date_au_plus_tard": 0, "marge": 0, "critique": true},
+ *      ...
+ *    },
  *    "erreur": null
  *  }
+ *
+ * Ce service le traduit en un format court utilisé par les templates :
+ *  ['realisable', 'duree', 'taches' => [idEnBase => ['tot', 'tard', 'marge', 'critique']], 'erreur']
  */
 class CalculOrdonnancement
 {
@@ -91,18 +98,24 @@ class CalculOrdonnancement
             return $this->echec('Réponse illisible du script Python.');
         }
 
-        // On ré-indexe les résultats par id en base
+        // "taches" est un objet indexé par numéro Python ("1", "2"…) :
+        // on ré-indexe par id en base et on raccourcit les noms des champs
         $parTache = [];
-        foreach ($resultat['taches'] ?? [] as $ligne) {
-            $idBase = $idsBase[$ligne['id']] ?? null;
+        foreach ($resultat['taches'] ?? [] as $numero => $ligne) {
+            $idBase = $idsBase[(int) $numero] ?? null;
             if (null !== $idBase) {
-                $parTache[$idBase] = $ligne;
+                $parTache[$idBase] = [
+                    'tot' => $ligne['date_au_plus_tot'] ?? null,
+                    'tard' => $ligne['date_au_plus_tard'] ?? null,
+                    'marge' => $ligne['marge'] ?? null,
+                    'critique' => (bool) ($ligne['critique'] ?? false),
+                ];
             }
         }
 
         return [
             'realisable' => (bool) ($resultat['realisable'] ?? false),
-            'duree' => $resultat['duree'] ?? null,
+            'duree' => $resultat['duree_projet'] ?? null,
             'taches' => $parTache,
             'erreur' => $resultat['erreur'] ?? null,
         ];
