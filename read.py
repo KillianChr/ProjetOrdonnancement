@@ -17,7 +17,7 @@ def verifier_tache(champs, num_ligne): #verifie que le csv est en Chiffre;Nom;Ch
         exit(f"Ligne {num_ligne} : prédécesseurs invalides '{precedentes}'.")
 
 
-def read(chemin="Graphe/P1.csv"):
+def read(chemin):
     with open(chemin) as csvfile:
         premiere = csvfile.readline().strip()
         if not premiere.isdigit():

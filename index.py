@@ -1,9 +1,8 @@
-
 from read import read, inverser
 from graphValide import verifier_graphe
 from ordonnancement import dureeProjet, datesTacheX , datesAuPlusTard , datesAuPlusTot , margesTaches, tachesCritique 
 
-nb_task, graphe = read()
+nb_task, graphe = read("Graphe/P1.csv")
 graphe_inverse = inverser(graphe, nb_task)
 dateAuPlusTard = datesAuPlusTard(graphe)
 
