@@ -11,7 +11,7 @@ from ordonnancement import (
     tachesCritique
 )
 
-nb_task, graphe = read()
+nb_task, graphe = read("Graphe/P1.csv")
 graphe_inverse = inverser(graphe, nb_task)
 
 if verifier_graphe(graphe):
