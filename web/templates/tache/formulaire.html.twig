@@ -1,0 +1,30 @@
+{# Formulaire d'ajout / modification d'une tâche. #}
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ titre }} — {{ projet.nom }}{% endblock %}
+
+{% block body %}
+    <p class="fil"><a href="{{ path('projet_detail', {id: projet.id}) }}">← {{ projet.nom }}</a></p>
+    <h1>{{ titre }}</h1>
+
+    {{ form_start(form, {attr: {class: 'formulaire'}}) }}
+        {{ form_row(form.description) }}
+        {{ form_row(form.duree) }}
+
+        {# Les précédentes sont des cases à cocher : on les affiche en colonnes #}
+        <fieldset class="cases">
+            <legend>{{ form_label(form.precedentes) }}</legend>
+            {% for case in form.precedentes %}
+                <label>{{ form_widget(case) }} {{ case.vars.label }}</label>
+            {% else %}
+                <p class="discret">Aucune autre tâche dans ce projet pour l'instant.</p>
+            {% endfor %}
+            {{ form_errors(form.precedentes) }}
+        </fieldset>
+
+        <div class="actions">
+            <button type="submit" class="bouton">Enregistrer</button>
+            <a href="{{ path('projet_detail', {id: projet.id}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

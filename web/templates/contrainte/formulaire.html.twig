@@ -1,0 +1,23 @@
+{# Formulaire d'ajout / modification d'une contrainte (partie P2). #}
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ titre }} — {{ projet.nom }}{% endblock %}
+
+{% block body %}
+    <p class="fil"><a href="{{ path('projet_detail', {id: projet.id}) }}">← {{ projet.nom }}</a></p>
+    <h1>{{ titre }}</h1>
+
+    <div class="aide">
+        <p><strong>Date de début fixe</strong> : la tâche A commence exactement à la date indiquée dans « Valeur ».</p>
+        <p><strong>Après le début d'une tâche</strong> : la tâche B commence au plus tôt « Valeur » unités après le début de la tâche A.</p>
+        <p><strong>Chevauchement</strong> : les tâches A et B se déroulent en même temps pendant au moins 1 unité.</p>
+    </div>
+
+    {{ form_start(form, {attr: {class: 'formulaire'}}) }}
+        {{ form_widget(form) }}
+        <div class="actions">
+            <button type="submit" class="bouton">Enregistrer</button>
+            <a href="{{ path('projet_detail', {id: projet.id}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}
