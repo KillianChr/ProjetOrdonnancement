@@ -25,21 +25,21 @@ def verifier(ligne, num_ligne): #verifie que le csv est en Chiffre;Nom;Chiffre;C
 def read(chemin):
     lignes = iter(ouvrir_csv(chemin)) #"iter" permet de de faire un "next" pour la lecture des lignes
     
-    premiere = next(lignes).strip()
+    premiere = next(lignes, "").strip()
     if not premiere.isdigit():
         exit("Le nombre de tache du CSV n'est pas indiqué")
     nb_task = int(premiere) #Passage obligatoire en int sinon le range marche pas car il ne peut pas compter un string
 
-    Sert_a_rien = next(lignes)  #Cette ligne ne sert littérallement à rien appart m'embetter
+    next(lignes)  #Cette ligne ne sert littérallement à rien appart m'embetter
 
     graphe = {}
     for i in range(nb_task):
 
         ligne = next(lignes, None)
-        if ligne is None and not ligne:
+        if ligne is None or not ligne:
             exit(f"{nb_task} tâches sont annoncées seulement il n'y a que {i} tâches")
 
-        champs = verifier(ligne, i + 3) # +3 parce graphe commence a ligne 3
+        champs = verifier(ligne, i + 3) # +3 parce que graphe commence a ligne 3
         id, description, duree, precedentes = champs
 
         if int(id) in graphe: #Verif des doublon
@@ -54,9 +54,9 @@ def read(chemin):
     if set(graphe) != set(range(1, nb_task + 1)): #Permet de vérifier les trou dans le graphe
         exit(f"Les ID ne vont pas de 1 à {nb_task}")
 
-    for nb in enumerate(lignes, start=nb_task+3): #Verifie si il y moins de lignes qu'annoncées
-        if nb != nb_task:
-            exit(f"Il y a plus de {nb_task} lignes")
+    for nb, ligne in enumerate(lignes, start=nb_task+3): #Verifie si il y moins de lignes qu'annoncées
+        if ligne.strip():
+            exit(f"Il y a {nb-2} taches plutôt que {nb_task} taches indiquées")
 
     return nb_task, graphe
 
