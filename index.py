@@ -18,39 +18,45 @@ nb_task, graphe = read(chemin)
 graphe_inverse = inverser(graphe, nb_task)
 extra = contraintes(chemin, graphe)  # contraintes propres au projet (voir contraintes.py)
 
-if verifier_graphe(graphe):
-    # initialisation
-    duree = dureeProjet(graphe, extra)
-    dates_tot = datesAuPlusTot(graphe, extra)
-    dates_tard = datesAuPlusTard(graphe, extra)
-    marges = margesTaches(graphe, extra)
-    critiques = tachesCritique(marges)
+try:
+    if verifier_graphe(graphe):
+        # initialisation
+        duree = dureeProjet(graphe, extra)
+        dates_tot = datesAuPlusTot(graphe, extra)
+        dates_tard = datesAuPlusTard(graphe, extra)
+        marges = margesTaches(graphe, extra)
+        critiques = tachesCritique(marges)
 
-    taches = {}
+        taches = {}
 
-    for identifiant in graphe:
-        tache = graphe[identifiant]
+        for identifiant in graphe:
+            tache = graphe[identifiant]
 
-        taches[identifiant] = {
-            "description": tache["description"],
-            "duree": tache["duree"],
-            "precedentes": tache["precedente"],
-            "date_au_plus_tot": dates_tot[identifiant],
-            "date_au_plus_tard": dates_tard[identifiant],
-            "marge": marges[identifiant],
-            "critique": identifiant in critiques
+            taches[identifiant] = {
+                "description": tache["description"],
+                "duree": tache["duree"],
+                "precedentes": tache["precedente"],
+                "date_au_plus_tot": dates_tot[identifiant],
+                "date_au_plus_tard": dates_tard[identifiant],
+                "marge": marges[identifiant],
+                "critique": identifiant in critiques
+            }
+
+        resultat = {
+            "realisable": True,
+            "duree_projet": duree,
+            "taches": taches
         }
 
-    resultat = {
-        "realisable": True,
-        "duree_projet": duree,
-        "taches": taches
-    }
-
-else:
+    else:
+        resultat = {
+            "realisable": False,
+            "erreur": "Graphe invalide"
+        }
+except ValueError as e:  # contraintes incompatibles ou dépendances circulaires
     resultat = {
         "realisable": False,
-        "erreur": "Graphe invalide"
+        "erreur": str(e)
     }
 
 # json
