@@ -1,7 +1,9 @@
 
 import json
+import sys
 
 from read import read, inverser
+from contraintes import contraintes
 from graphValide import verifier_graphe
 from ordonnancement import (
     dureeProjet,
@@ -11,15 +13,17 @@ from ordonnancement import (
     tachesCritique
 )
 
-nb_task, graphe = read("Graphe/P1.csv")
+chemin = f"Graphe/{sys.argv[1] if len(sys.argv) > 1 else 'P1'}.csv"  # python index.py P2
+nb_task, graphe = read(chemin)
 graphe_inverse = inverser(graphe, nb_task)
+extra = contraintes(chemin, graphe)  # contraintes propres au projet (voir contraintes.py)
 
 if verifier_graphe(graphe):
     # initialisation
-    duree = dureeProjet(graphe)
-    dates_tot = datesAuPlusTot(graphe)
-    dates_tard = datesAuPlusTard(graphe)
-    marges = margesTaches(graphe)
+    duree = dureeProjet(graphe, extra)
+    dates_tot = datesAuPlusTot(graphe, extra)
+    dates_tard = datesAuPlusTard(graphe, extra)
+    marges = margesTaches(graphe, extra)
     critiques = tachesCritique(marges)
 
     taches = {}

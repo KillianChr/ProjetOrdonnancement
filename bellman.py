@@ -16,7 +16,7 @@ def bellman_inverse(arcs, s, n):
             break
 
     if c:
-        raise ValueError("Dépendances circulaires")
+        raise ValueError("Dépendances circulaires ou contraintes incompatibles")
 
     return s
 
@@ -36,6 +36,6 @@ def bellman(arcs, s, n):
             break
 
     if c:
-        raise ValueError("Dépendances circulaires")
+        raise ValueError("Dépendances circulaires ou contraintes incompatibles")
 
     return s
