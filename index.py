@@ -16,9 +16,9 @@ from ordonnancement import (
 chemin = f"Graphe/{sys.argv[1] if len(sys.argv) > 1 else 'P1'}.csv"  # python index.py P2
 nb_task, graphe = read(chemin)
 graphe_inverse = inverser(graphe, nb_task)
-extra = contraintes(chemin, graphe)  # contraintes propres au projet (voir contraintes.py)
 
 try:
+    extra = contraintes(chemin, graphe)  # contraintes propres au projet (voir contraintes.py)
     if verifier_graphe(graphe):
         # initialisation
         duree = dureeProjet(graphe, extra)
@@ -53,7 +53,7 @@ try:
             "realisable": False,
             "erreur": "Graphe invalide"
         }
-except ValueError as e:  # contraintes incompatibles ou dépendances circulaires
+except ValueError as e:  # contraintes incompatibles, tâche inexistante ou dépendances circulaires
     resultat = {
         "realisable": False,
         "erreur": str(e)
