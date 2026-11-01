@@ -32,7 +32,7 @@
                 Ordonnancement
             </a>
             <nav aria-label="Navigation principale">
-                <a href="{{ path('projet_liste') }}" class="{{ route != 'accueil' ? 'actif' }}">Projets</a>
+                <a href="{{ path('projet_liste') }}" class="{{ route and route != 'accueil' ? 'actif' }}">Projets</a>
             </nav>
             <span class="barre-methode">Méthode des potentiels · Bellman</span>
             <a href="{{ path('projet_nouveau') }}" class="bouton">{{ include('_plus.html.twig') }}Nouveau projet</a>

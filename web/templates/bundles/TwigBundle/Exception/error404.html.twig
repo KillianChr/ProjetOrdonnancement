@@ -1,0 +1,16 @@
+{# Page 404, affichée en production quand une page ou un projet n'existe pas. #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Page introuvable — Ordonnancement{% endblock %}
+
+{% block body %}
+    <section class="page-erreur">
+        <span class="etiquette">Erreur 404</span>
+        <h1 class="titre-geant">Page introuvable</h1>
+        <p class="chapeau">Cette adresse ne mène à aucune page : le projet a peut-être été supprimé, ou le lien est incomplet.</p>
+        <div class="actions">
+            <a href="{{ path('projet_liste') }}" class="bouton bouton-grand">Voir les projets</a>
+            <a href="{{ path('accueil') }}" class="bouton bouton-secondaire bouton-grand">Retour à l'accueil</a>
+        </div>
+    </section>
+{% endblock %}

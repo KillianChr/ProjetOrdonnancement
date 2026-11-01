@@ -1,0 +1,18 @@
+{#
+    Page d'erreur générale, affichée en production pour toutes les erreurs
+    sans page dédiée (500 en particulier). Symfony fournit status_code.
+#}
+{% extends 'base.html.twig' %}
+
+{% block title %}Erreur {{ status_code }} — Ordonnancement{% endblock %}
+
+{% block body %}
+    <section class="page-erreur">
+        <span class="etiquette etiquette-critique">Erreur {{ status_code }}</span>
+        <h1 class="titre-geant">La page n'a pas pu s'afficher</h1>
+        <p class="chapeau">Le serveur a rencontré un problème. Vos projets enregistrés ne sont pas modifiés : rechargez la page dans un instant, ou revenez à l'accueil.</p>
+        <div class="actions">
+            <a href="{{ path('accueil') }}" class="bouton bouton-grand">Retour à l'accueil</a>
+        </div>
+    </section>
+{% endblock %}

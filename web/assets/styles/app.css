@@ -310,6 +310,11 @@ ol, ul { margin: 0; padding: 0; list-style: none; }
 .pied strong { color: var(--encre); }
 .pied-technique { text-transform: none; font-size: 11px; letter-spacing: 0.04em; }
 
+/* ---------- Pages d'erreur ---------- */
+.page-erreur { display: grid; gap: 18px; justify-items: start; padding: 72px 0 40px; }
+.page-erreur .titre-geant { max-width: 11ch; margin-bottom: 8px; line-height: 0.95; }
+.page-erreur .actions { margin-top: 10px; }
+
 /* ---------- Registre des projets ---------- */
 .entete-registre { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px 64px; align-items: end; padding: 44px 0 40px; }
 .entete-registre > div { display: grid; gap: 18px; }
@@ -803,6 +808,7 @@ ol, ul { margin: 0; padding: 0; list-style: none; }
 
     .page { padding-bottom: 64px; }
     .accroche { padding: 40px 0 36px; }
+    .page-erreur { padding: 40px 0 24px; }
     .accroche-suite p { font-size: 17px; }
     .chapeau { font-size: 16px; }
     .entete-projet,
