@@ -5,49 +5,18 @@ import sys
 from read import read, inverser
 from contraintes import contraintes
 from graphValide import verifier_graphe
-from ordonnancement import (
-    dureeProjet,
-    datesAuPlusTard,
-    datesAuPlusTot,
-    margesTaches,
-    tachesCritique
-)
+from calcul import calculer
 
 chemin = f"Graphe/{sys.argv[1] if len(sys.argv) > 1 else 'P1'}.csv"  # python index.py P2
 nb_task, graphe = read(chemin)
-graphe_inverse = inverser(graphe, nb_task)
 
 try:
     extra = contraintes(chemin, graphe)  # contraintes propres au projet (voir contraintes.py)
     if verifier_graphe(graphe):
-        # initialisation
-        duree = dureeProjet(graphe, extra)
-        dates_tot = datesAuPlusTot(graphe, extra)
-        dates_tard = datesAuPlusTard(graphe, extra)
-        marges = margesTaches(graphe, extra)
-        critiques = tachesCritique(marges)
-
-        taches = {}
-
-        for identifiant in graphe:
-            tache = graphe[identifiant]
-
-            taches[identifiant] = {
-                "description": tache["description"],
-                "duree": tache["duree"],
-                "precedentes": tache["precedente"],
-                "date_au_plus_tot": dates_tot[identifiant],
-                "date_au_plus_tard": dates_tard[identifiant],
-                "marge": marges[identifiant],
-                "critique": identifiant in critiques
-            }
-
-        resultat = {
-            "realisable": True,
-            "duree_projet": duree,
-            "taches": taches
-        }
-
+        # inverser() a besoin d'un graphe valide : il plante sur une précédente inexistante
+        graphe_inverse = inverser(graphe, nb_task)
+        # Les calculs et la structure du résultat sont dans calcul.py (partagés avec le site)
+        resultat = calculer(graphe, extra)
     else:
         resultat = {
             "realisable": False,

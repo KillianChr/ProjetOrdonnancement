@@ -4,13 +4,16 @@
 {% block title %}{{ titre }} — Ordonnancement{% endblock %}
 
 {% block body %}
-    <h1>{{ titre }}</h1>
+    <section class="entete-formulaire">
+        <p class="fil"><a href="{{ path('projet_liste') }}">Projets</a><span>/</span><span class="fil-actuel">{{ titre }}</span></p>
+        <h1 class="titre-grand">{{ titre }}</h1>
+    </section>
 
-    {{ form_start(form, {attr: {class: 'formulaire'}}) }}
+    {{ form_start(form, {attr: {class: 'feuille formulaire'}}) }}
         {{ form_widget(form) }}
         <div class="actions">
-            <button type="submit" class="bouton">Enregistrer</button>
-            <a href="{{ path('projet_liste') }}">Annuler</a>
+            <button type="submit" class="bouton bouton-grand">Enregistrer le projet</button>
+            <a href="{{ path('projet_liste') }}" class="bouton-discret">Annuler</a>
         </div>
     {{ form_end(form) }}
 {% endblock %}

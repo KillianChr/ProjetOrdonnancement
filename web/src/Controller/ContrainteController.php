@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Contrainte;
 use App\Entity\Projet;
 use App\Form\ContrainteType;
+use App\Service\CalculOrdonnancement;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,9 +18,14 @@ use Symfony\Component\Routing\Attribute\Route;
 class ContrainteController extends AbstractController
 {
     #[Route('/projet/{id}/contrainte/nouvelle', name: 'contrainte_nouvelle', methods: ['GET', 'POST'])]
-    public function nouvelle(Projet $projet, Request $request, EntityManagerInterface $em): Response
+    public function nouvelle(Projet $projet, Request $request, EntityManagerInterface $em, CalculOrdonnancement $calcul): Response
     {
-        $contrainte = new Contrainte();
+        // Valeurs de départ : le panneau « Lecture » montre tout de suite un exemple
+        $taches = $projet->getTaches();
+        $contrainte = (new Contrainte())
+            ->setType(Contrainte::PRECEDENCE)
+            ->setTacheA($taches->first() ?: null)
+            ->setTacheB($taches->get(1));
         $projet->ajouterContrainte($contrainte);
 
         $form = $this->createForm(ContrainteType::class, $contrainte, ['projet' => $projet]);
@@ -37,11 +43,12 @@ class ContrainteController extends AbstractController
             'form' => $form,
             'projet' => $projet,
             'titre' => 'Nouvelle contrainte',
+            'resultat' => $calcul->calculer($projet),
         ]);
     }
 
     #[Route('/contrainte/{id}/modifier', name: 'contrainte_modifier', methods: ['GET', 'POST'])]
-    public function modifier(Contrainte $contrainte, Request $request, EntityManagerInterface $em): Response
+    public function modifier(Contrainte $contrainte, Request $request, EntityManagerInterface $em, CalculOrdonnancement $calcul): Response
     {
         $projet = $contrainte->getProjet();
         $form = $this->createForm(ContrainteType::class, $contrainte, ['projet' => $projet]);
@@ -58,6 +65,7 @@ class ContrainteController extends AbstractController
             'form' => $form,
             'projet' => $projet,
             'titre' => 'Modifier la contrainte',
+            'resultat' => $calcul->calculer($projet),
         ]);
     }
 

@@ -1,23 +1,92 @@
-{# Formulaire d'ajout / modification d'une contrainte (partie P2). #}
+{#
+    Formulaire d'ajout / modification d'une contrainte.
+    Le contrôleur Stimulus « contrainte-formulaire » masque les champs inutiles et remplit le panneau
+    « Lecture » : formule, schéma, arcs ajoutés au graphe et effet sur le planning.
+    Sans JavaScript, tous les champs restent visibles et le panneau reste caché.
+#}
 {% extends 'base.html.twig' %}
 
 {% block title %}{{ titre }} — {{ projet.nom }}{% endblock %}
 
 {% block body %}
-    <p class="fil"><a href="{{ path('projet_detail', {id: projet.id}) }}">← {{ projet.nom }}</a></p>
-    <h1>{{ titre }}</h1>
+    {# Données des tâches pour le panneau « Lecture » (id => numéro, nom, durée, date au plus tôt) #}
+    {% set donnees = {} %}
+    {% for tache in projet.taches %}
+        {% set donnees = donnees|merge({('t' ~ tache.id): {numero: tache.numero, nom: tache.description, duree: tache.duree, tot: resultat.taches[tache.id].tot ?? null}}) %}
+    {% endfor %}
+    {% set symboles = constant('App\\Entity\\Contrainte::SYMBOLES') %}
 
-    <div class="aide">
-        <p><strong>Date de début fixe</strong> : la tâche A commence exactement à la date indiquée dans « Valeur ».</p>
-        <p><strong>Après le début d'une tâche</strong> : la tâche B commence au plus tôt « Valeur » unités après le début de la tâche A.</p>
-        <p><strong>Chevauchement</strong> : les tâches A et B se déroulent en même temps pendant au moins 1 unité.</p>
+    <section class="entete-formulaire">
+        <p class="fil">
+            <a href="{{ path('projet_liste') }}">Projets</a><span>/</span>
+            <a href="{{ path('projet_detail', {id: projet.id}) }}">{{ projet.reference }} {{ projet.nom }}</a><span>/</span>
+            <span class="fil-actuel">{{ titre }}</span>
+        </p>
+        <h1 class="titre-grand">{{ titre }}</h1>
+        <p class="chapeau chapeau-large">Toute contrainte s'écrit <span class="formule-texte">Sⱼ ≥ Sᵢ + q</span> : un arc ajouté au graphe, que Bellman traite comme une précédence. Si les contraintes se contredisent, un circuit de longueur positive apparaît et le projet n'est plus réalisable.</p>
+    </section>
+
+    <div class="disposition-contrainte"
+         data-controller="contrainte-formulaire"
+         data-contrainte-formulaire-taches-value="{{ donnees|json_encode }}"
+         data-contrainte-formulaire-duree-value="{{ resultat.realisable ? resultat.duree : 0 }}">
+        {{ form_start(form, {attr: {class: 'formulaire-contrainte'}}) }}
+            <section>
+                <h2>Type de contrainte</h2>
+                <div class="feuille types" data-action="change->contrainte-formulaire#mettreAJour">
+                    {% for choix in form.type %}
+                        <label class="type">
+                            {{ form_widget(choix, {attr: {'data-contrainte-formulaire-target': 'type'}}) }}
+                            <span class="type-coche"></span>
+                            <span class="type-libelle">{{ choix.vars.label }}</span>
+                            <span class="type-symbole">{{ symboles[choix.vars.value] }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.type) }}
+            </section>
+
+            <section>
+                <h2>Tâches et valeur</h2>
+                <div class="feuille formulaire champs-contrainte" data-action="change->contrainte-formulaire#mettreAJour input->contrainte-formulaire#mettreAJour">
+                    {{ form_row(form.tacheA, {attr: {'data-contrainte-formulaire-target': 'tacheA'}}) }}
+                    <div data-contrainte-formulaire-target="groupeB">{{ form_row(form.tacheB, {attr: {'data-contrainte-formulaire-target': 'tacheB'}}) }}</div>
+                    <div data-contrainte-formulaire-target="groupeValeur">
+                        {{ form_label(form.valeur) }}
+                        {{ form_errors(form.valeur) }}
+                        <span class="compteur" data-controller="compteur">
+                            <button type="button" data-action="compteur#moins" aria-label="Diminuer la valeur">−</button>
+                            {{ form_widget(form.valeur, {attr: {'data-contrainte-formulaire-target': 'valeur', min: 0, placeholder: '0'}}) }}
+                            <button type="button" data-action="compteur#plus" aria-label="Augmenter la valeur">+</button>
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            {{ form_rest(form) }}
+
+            <div class="actions">
+                <button type="submit" class="bouton bouton-grand">Enregistrer la contrainte</button>
+                <a href="{{ path('projet_detail', {id: projet.id}) }}" class="bouton-discret">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+
+        {# Panneau d'encre : ce que la contrainte signifie, rempli par le contrôleur Stimulus #}
+        <aside class="lecture" data-contrainte-formulaire-target="lecture" hidden>
+            <div class="lecture-entete">
+                <span>Lecture</span>
+                <span class="lecture-code" data-contrainte-formulaire-target="code"></span>
+            </div>
+            <div class="lecture-texte">
+                <p class="lecture-formule" data-contrainte-formulaire-target="formule"></p>
+                <p data-contrainte-formulaire-target="phrase"></p>
+            </div>
+            <div class="lecture-schema" data-contrainte-formulaire-target="schema"></div>
+            <div class="lecture-arcs">
+                <span>Arcs ajoutés au graphe</span>
+                <div data-contrainte-formulaire-target="arcs"></div>
+            </div>
+            <p class="lecture-effet" data-contrainte-formulaire-target="effet"></p>
+        </aside>
     </div>
-
-    {{ form_start(form, {attr: {class: 'formulaire'}}) }}
-        {{ form_widget(form) }}
-        <div class="actions">
-            <button type="submit" class="bouton">Enregistrer</button>
-            <a href="{{ path('projet_detail', {id: projet.id}) }}">Annuler</a>
-        </div>
-    {{ form_end(form) }}
 {% endblock %}

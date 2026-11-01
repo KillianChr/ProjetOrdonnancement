@@ -1,0 +1,80 @@
+{# Page d'accueil : ce que fait l'outil, un exemple réel, et les projets récents. #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <section class="accroche">
+        <h1>Planifier un projet, c'est trouver son <span>plus long chemin</span>.</h1>
+        <div class="accroche-suite">
+            <p>Décrivez vos tâches, leurs durées et ce qui doit être fini avant. Ordonnancement calcule les dates au plus tôt et au plus tard, les marges et le chemin critique, par la méthode des potentiels et l'algorithme de Bellman.</p>
+            <div class="actions">
+                <a href="{{ path('projet_nouveau') }}" class="bouton bouton-grand">{{ include('_plus.html.twig') }}Nouveau projet</a>
+                <a href="{{ path('projet_liste') }}" class="bouton bouton-secondaire bouton-grand">Voir les projets</a>
+            </div>
+        </div>
+    </section>
+
+    {% if exemple %}
+        <section class="feuille feuille-encre exemple">
+            <div class="exemple-entete">
+                <span class="etiquette">Exemple · {{ exemple.projet.reference }} {{ exemple.projet.nom }}</span>
+                {{ include('_legende.html.twig') }}
+            </div>
+            {{ include('_gantt.html.twig', {projet: exemple.projet, resultat: exemple.resultat, compact: true}) }}
+        </section>
+    {% endif %}
+
+    <section class="etapes">
+        <div>
+            <h3>Décrire les tâches</h3>
+            <p>Une description, une durée, et les tâches à terminer avant. Le graphe est vérifié à chaque ajout : pas de boucle, pas de tâche inconnue.</p>
+            <div class="feuille etape-exemple etape-tache">
+                <span class="reference">T04</span><strong>Plomberie</strong><span class="chiffre">8 u · après T01</span>
+            </div>
+        </div>
+        <div>
+            <h3>Ajouter des contraintes</h3>
+            <p>Date fixe, début au plus tôt, délai après une autre tâche, chevauchement : sept types, chacun traduit en arc du graphe.</p>
+            <div class="feuille etape-exemple etape-contrainte">
+                <span class="formule">S₃ ≥ 10</span><span>Toiture pas avant 10</span>
+            </div>
+        </div>
+        <div>
+            <h3>Lire le planning</h3>
+            <p>Bellman donne les dates au plus tôt et au plus tard. L'écart est la marge ; les tâches sans marge forment le chemin critique.</p>
+            <div class="feuille etape-exemple etape-chemin">
+                <span>T01</span><span>→</span><span>T04</span><span>→</span><span>T06</span><span>→</span><span>T08</span><span>→</span><span>T09</span><span>→</span><span>T10</span>
+            </div>
+        </div>
+    </section>
+
+    {% if recents is not empty %}
+        <section class="recents">
+            <div class="entete-section">
+                <h2>Projets récents</h2>
+                <a href="{{ path('projet_liste') }}" class="lien-fort">Tous les projets</a>
+            </div>
+            <div class="recents-grille">
+                {% for ligne in recents %}
+                    {% set p = ligne.projet %}
+                    <a href="{{ path('projet_detail', {id: p.id}) }}" class="feuille recent">
+                        <span class="recent-titre">
+                            <span class="etiquette">{{ p.reference }} · {{ p.taches|length }} tâche{{ p.taches|length > 1 ? 's' }} · {{ p.contraintes|length }} contrainte{{ p.contraintes|length > 1 ? 's' }}</span>
+                            <strong>{{ p.nom }}</strong>
+                        </span>
+                        {% if ligne.resultat.realisable %}
+                            <span class="recent-duree"><span class="chiffre-cle">{{ ligne.resultat.duree }}</span> u</span>
+                            {{ include('_apercu.html.twig', {projet: p, resultat: ligne.resultat}) }}
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}
+
+{% block pied %}
+    <footer class="pied">
+        <span><strong>Ordonnancement</strong> · Gabriel · Yoan · Théo · Killian</span>
+        <span class="pied-technique">Calcul en Python · Interface Symfony 7.4</span>
+    </footer>
+{% endblock %}

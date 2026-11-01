@@ -1,32 +1,52 @@
-{# Gabarit commun à toutes les pages : en-tête, messages flash, contenu. #}
+{#
+    Gabarit commun. Système de design « Cote » : le site se lit comme un plan d'exécution.
+    Encre sur papier, nombres en chasse fixe, une seule couleur réservée au chemin critique.
+#}
 <!DOCTYPE html>
 <html lang="fr">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#f3f2ee">
         <title>{% block title %}Ordonnancement{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📅</text></svg>">
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect x=%222%22 y=%224%22 width=%2211%22 height=%224%22 rx=%221%22 fill=%22%230d0d0e%22/><rect x=%227%22 y=%2210%22 width=%2214%22 height=%224%22 rx=%221%22 fill=%22%23ff4f00%22/><rect x=%224%22 y=%2216%22 width=%229%22 height=%224%22 rx=%221%22 fill=%22%230d0d0e%22/></svg>">
+        {# Schibsted Grotesk pour les textes, Martian Mono pour les nombres et les références #}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&family=Martian+Mono:wdth,wght@75..112.5,300..700&display=swap">
         {% block stylesheets %}{% endblock %}
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
     <body>
-        <header class="entete">
-            <a href="{{ path('projet_liste') }}" class="logo">📅 Ordonnancement</a>
-            <nav>
-                <a href="{{ path('projet_liste') }}">Projets</a>
-                <a href="{{ path('projet_nouveau') }}" class="bouton">+ Nouveau projet</a>
+        {% set route = app.request.attributes.get('_route') ?? '' %}
+        <header class="barre">
+            <a href="{{ path('accueil') }}" class="marque">
+                {# Pictogramme : trois barres de planning, celle du milieu sur le chemin critique #}
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="2" y="4" width="11" height="4" rx="1"/>
+                    <rect class="marque-critique" x="7" y="10" width="14" height="4" rx="1"/>
+                    <rect x="4" y="16" width="9" height="4" rx="1"/>
+                </svg>
+                Ordonnancement
+            </a>
+            <nav aria-label="Navigation principale">
+                <a href="{{ path('projet_liste') }}" class="{{ route != 'accueil' ? 'actif' }}">Projets</a>
             </nav>
+            <span class="barre-methode">Méthode des potentiels · Bellman</span>
+            <a href="{{ path('projet_nouveau') }}" class="bouton">{{ include('_plus.html.twig') }}Nouveau projet</a>
         </header>
 
-        <main class="contenu">
-            {# Messages de confirmation (ajoutés par addFlash() dans les contrôleurs) #}
+        <main class="page">
+            {# Confirmations envoyées par addFlash() dans les contrôleurs #}
             {% for message in app.flashes('succes') %}
-                <div class="flash flash-succes">{{ message }}</div>
+                <p class="confirmation" role="status">{{ message }}</p>
             {% endfor %}
 
             {% block body %}{% endblock %}
         </main>
+
+        {% block pied %}{% endblock %}
     </body>
 </html>
