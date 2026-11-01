@@ -9,13 +9,14 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Contrainte supplémentaire sur un projet, en plus des précédences (cours p.20 à 36).
- * Utilisable sur n'importe quel projet. Les mêmes types existent côté Python (contraintes.TYPES).
+ * Utilisable sur n'importe quel projet. Les types portent le nom des fonctions de contraintes.py
+ * (debut_max_apres_fin est traduit par calcul.py).
  *
  *  - DATE_FIXE            : A commence exactement à la date "valeur"              (ex. P2 : S2 = 3)
  *  - DATE_MIN             : A ne commence pas avant la date "valeur"
  *  - DATE_MAX             : A commence au plus tard à la date "valeur"
- *  - DEBUT_APRES_DEBUT    : B commence au moins "valeur" après le début de A      (ex. P2 : S5 >= S3)
- *  - DEBUT_APRES_FIN      : B commence au moins "valeur" après la fin de A        (précédence avec délai)
+ *  - APRES_DEBUT          : B commence au moins "valeur" après le début de A      (ex. P2 : S5 >= S3)
+ *  - PRECEDENCE           : B commence après la fin de A
  *  - DEBUT_MAX_APRES_FIN  : B commence au plus "valeur" après la fin de A         (ex. cours p.20)
  *  - CHEVAUCHEMENT        : A et B se chevauchent d'au moins 1 unité de temps     (ex. P2 : 3 et 4)
  */
@@ -25,8 +26,8 @@ class Contrainte
     public const DATE_FIXE = 'date_fixe';
     public const DATE_MIN = 'date_min';
     public const DATE_MAX = 'date_max';
-    public const DEBUT_APRES_DEBUT = 'debut_apres_debut';
-    public const DEBUT_APRES_FIN = 'debut_apres_fin';
+    public const APRES_DEBUT = 'apres_debut';
+    public const PRECEDENCE = 'precedence';
     public const DEBUT_MAX_APRES_FIN = 'debut_max_apres_fin';
     public const CHEVAUCHEMENT = 'chevauchement';
 
@@ -35,15 +36,15 @@ class Contrainte
         'A commence exactement à la date X' => self::DATE_FIXE,
         'A ne commence pas avant la date X' => self::DATE_MIN,
         'A commence au plus tard à la date X' => self::DATE_MAX,
-        'B commence au moins X après le début de A' => self::DEBUT_APRES_DEBUT,
-        'B commence au moins X après la fin de A' => self::DEBUT_APRES_FIN,
+        'B commence au moins X après le début de A' => self::APRES_DEBUT,
+        'B commence après la fin de A' => self::PRECEDENCE,
         'B commence au plus X après la fin de A' => self::DEBUT_MAX_APRES_FIN,
         'A et B se chevauchent (au moins 1 unité)' => self::CHEVAUCHEMENT,
     ];
 
     /** Types qui portent sur deux tâches (A et B). */
     public const TYPES_A_DEUX_TACHES = [
-        self::DEBUT_APRES_DEBUT, self::DEBUT_APRES_FIN, self::DEBUT_MAX_APRES_FIN, self::CHEVAUCHEMENT,
+        self::APRES_DEBUT, self::PRECEDENCE, self::DEBUT_MAX_APRES_FIN, self::CHEVAUCHEMENT,
     ];
 
     /** Types qui portent sur une date : la valeur X est obligatoire. */
@@ -58,7 +59,7 @@ class Contrainte
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Projet $projet = null;
 
-    /** Une des constantes DATE_FIXE, DEBUT_APRES_DEBUT ou CHEVAUCHEMENT. */
+    /** Une des constantes de type ci-dessus (voir TYPES). */
     #[ORM\Column(length: 30)]
     #[Assert\Choice(choices: self::TYPES, message: 'Type de contrainte inconnu.')]
     private ?string $type = null;

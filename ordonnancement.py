@@ -2,42 +2,29 @@
 from bellman import bellman, bellman_inverse
 from contraintes import SIGMA
 
-# Toutes les fonctions acceptent un paramètre facultatif arcs_sup : la liste des arcs (i, j, q)
-# des contraintes supplémentaires (voir contraintes.py). Sans lui, seules les précédences comptent.
+FIN = "fin"  # sommet fictif de fin de projet
+# extra = arcs (i, j, q) supplémentaires (Sj >= Si + q), par ex. contraintes(taches)
 
-TAU = -1  # tâche fictive de fin de projet (durée 0), utilisée pour les dates au plus tard
-
-
-def arcs_graphe(taches, arcs_sup=None):
+def arcsPrecedences(taches):
     # Construction des arcs à partir des précédences
-    arcs = [
+    return [
         (i, j, taches[i]["duree"])
         for j, t in taches.items()
         for i in t["precedente"]
     ]
-    # Aucune tâche ne commence avant le début du projet : Si >= So + 0 (cours p.11)
-    arcs += [(SIGMA, i, 0) for i in taches]
 
-    return arcs + list(arcs_sup or [])
+def datesAuPlusTot(taches, extra=()):
+    arcs = arcsPrecedences(taches) + list(extra)
 
-
-def datesAuPlusTot(taches, arcs_sup=None):
-    # Plus longs chemins depuis So (Bellman, cours p.11)
     s = {i: 0 for i in taches}
-    s[SIGMA] = 0
-    n = len(s)
+    s[SIGMA] = 0  # début du projet
+    n = len(taches) + 1  # sommets : les tâches + SIGMA
 
-    s = bellman_inverse(arcs_graphe(taches, arcs_sup), s, n)
+    s = bellman_inverse(arcs, s, n)
+    return {i: s[i] for i in taches}
 
-    # So doit rester à 0 : sinon une contrainte impose de commencer avant le début du projet
-    if s[SIGMA] != 0:
-        raise ValueError("Dépendances circulaires")
-
-    del s[SIGMA]
-    return s
-
-def dureeProjet(taches, arcs_sup=None):
-    s = datesAuPlusTot(taches, arcs_sup)
+def dureeProjet(taches, extra=()):
+    s = datesAuPlusTot(taches, extra)
 
     return max(
         s[i] + taches[i]["duree"]
@@ -45,38 +32,33 @@ def dureeProjet(taches, arcs_sup=None):
     )
 
 
-def datesAuPlusTard(taches, arcs_sup=None):
-    # Plus courts chemins depuis la fin du projet dans le graphe inverse
-    # (arcs et poids opposés), en supposant S_fin = durée du projet (cours p.16)
-    duree = dureeProjet(taches, arcs_sup)
+def datesAuPlusTard(taches, extra=()):
+    duree = dureeProjet(taches, extra)
 
-    # On ajoute la fin fictive : chaque tâche doit être finie avant elle (Sfin >= Si + di)
-    arcs = arcs_graphe(taches, arcs_sup) + [(i, TAU, taches[i]["duree"]) for i in taches]
-
-    #construction arcs inverse
-    arcs_inverses = [(j, i, -q) for i, j, q in arcs]
+    # tous les arcs, plus un arc i -> FIN de poids durée(i) : FIN >= Si + durée(i)
+    arcs = arcsPrecedences(taches) + list(extra) + [(i, FIN, taches[i]["duree"]) for i in taches]
+    # arcs inversés : Si <= Sj - q
+    arcs = [(j, i, -q) for i, j, q in arcs]
 
     dates = {i: float("inf") for i in taches}
-    dates[TAU] = duree
-    dates[SIGMA] = 0  # le début du projet reste fixé à 0
+    dates[SIGMA] = 0
+    dates[FIN] = duree
+    n = len(taches) + 2  # sommets : les tâches + SIGMA + FIN
 
-    dates = bellman(arcs_inverses, dates, len(dates))
-
+    dates = bellman(arcs, dates, n)
     return {i: dates[i] for i in taches}
 
 
-
-
-def datesTacheX(x,taches,fonctionDate):
+def datesTacheX(x,taches,fonctionDate,extra=()):
     if x not in taches:
         raise ValueError(f"La tâche {x} n'existe pas")
 
-    return fonctionDate(taches)[x]
+    return fonctionDate(taches, extra)[x]
 
 
-def margesTaches(taches, arcs_sup=None):
-    dateTot = datesAuPlusTot(taches, arcs_sup)
-    dateTard = datesAuPlusTard(taches, arcs_sup)
+def margesTaches(taches, extra=()):
+    dateTot = datesAuPlusTot(taches, extra)
+    dateTard = datesAuPlusTard(taches, extra)
 
     marges = {}
 
@@ -92,3 +74,5 @@ def tachesCritique(margesTaches):
         if margesTaches[i]==0 :
             taches.append(i)
     return taches
+
+        

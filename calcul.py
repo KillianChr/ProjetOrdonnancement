@@ -9,7 +9,7 @@ Utilisation :
       "nom": "Construction maison",
       "taches": [ {"id": 1, "description": "Murs", "duree": 7, "precedentes": []}, ... ],
       "contraintes": [ {"type": "date_fixe", "tacheA": 2, "tacheB": null, "valeur": 3}, ... ]
-        (types possibles : voir contraintes.TYPES)
+        (types : les fonctions de contraintes.py, plus "debut_max_apres_fin" traduit ci-dessous)
     }
 - Sortie (stdout) : le résultat en JSON, au même format que resultat.json produit par index.py,
   avec en plus un champ "erreur" (null si tout va bien).
@@ -22,7 +22,7 @@ import io
 import json
 import sys
 
-from contraintes import contraintes
+from contraintes import SIGMA, arcs_contrainte
 from graphValide import verifier_graphe
 from ordonnancement import (
     dureeProjet,
@@ -45,15 +45,41 @@ def construire_graphe(projet):
     }
 
 
-def calculer(graphe, arcs_sup=None):
+def traduire_contrainte(contrainte, graphe):
+    """Traduit une contrainte du site (type, tacheA, tacheB, valeur) en appel de contraintes.py : (nom, paramètres)."""
+    nom = contrainte.get("type")
+    a = contrainte.get("tacheA")
+    b = contrainte.get("tacheB")
+    x = int(contrainte.get("valeur") or 0)
+
+    if nom in ("date_fixe", "date_min", "date_max"):
+        return nom, [a, x]
+    if nom == "apres_debut":
+        return nom, [a, b, x]
+    if nom == "debut_max_apres_fin":
+        # Cours p.20 : Sb <= Sa + da + x  <=>  Sa >= Sb - da - x, soit apres_debut(b, a, -(da + x))
+        return "apres_debut", [b, a, -(graphe[a]["duree"] + x)]
+    return nom, [a, b]  # precedence, chevauchement (un type inconnu est refusé par arcs_contrainte)
+
+
+def arcs_contraintes(liste, graphe):
+    """Arcs des contraintes du site, comme contraintes() de contraintes.py le fait pour un fichier."""
+    arcs = [(SIGMA, i, 0) for i in graphe]  # aucune tâche ne commence avant le début du projet
+    for contrainte in liste:
+        nom, params = traduire_contrainte(contrainte, graphe)
+        arcs += arcs_contrainte(nom, params, graphe)
+    return arcs
+
+
+def calculer(graphe, extra=()):
     """
     Calcule durée, dates, marges et tâches critiques (structure du resultat.json de index.py).
-    arcs_sup : arcs des contraintes supplémentaires (voir contraintes.py), facultatif.
+    extra : arcs des contraintes supplémentaires, facultatif.
     """
-    duree = dureeProjet(graphe, arcs_sup)
-    dates_tot = datesAuPlusTot(graphe, arcs_sup)
-    dates_tard = datesAuPlusTard(graphe, arcs_sup)
-    marges = margesTaches(graphe, arcs_sup)
+    duree = dureeProjet(graphe, extra)
+    dates_tot = datesAuPlusTot(graphe, extra)
+    dates_tard = datesAuPlusTard(graphe, extra)
+    marges = margesTaches(graphe, extra)
     critiques = tachesCritique(marges)
 
     taches = {}
@@ -93,9 +119,9 @@ def main():
                 valide = verifier_graphe(graphe)
                 if valide:
                     # Les contraintes deviennent des arcs ajoutés au graphe (lève ValueError si mal formées)
-                    arcs_sup = contraintes(graphe, liste_contraintes)
+                    extra = arcs_contraintes(liste_contraintes, graphe)
                     try:
-                        resultat = calculer(graphe, arcs_sup)
+                        resultat = calculer(graphe, extra)
                     except ValueError:
                         # Bellman a trouvé un circuit de longueur positive : contraintes incompatibles
                         resultat = echec("Projet non réalisable : les contraintes sont incompatibles entre elles "
