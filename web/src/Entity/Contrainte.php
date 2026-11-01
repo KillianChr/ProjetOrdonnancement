@@ -42,6 +42,17 @@ class Contrainte
         'A et B se chevauchent (au moins 1 unité)' => self::CHEVAUCHEMENT,
     ];
 
+    /** Écriture mathématique de chaque type, affichée dans le formulaire. */
+    public const SYMBOLES = [
+        self::DATE_FIXE => 'S_A = X',
+        self::DATE_MIN => 'S_A ≥ X',
+        self::DATE_MAX => 'S_A ≤ X',
+        self::APRES_DEBUT => 'S_B ≥ S_A + X',
+        self::PRECEDENCE => 'S_B ≥ S_A + d_A',
+        self::DEBUT_MAX_APRES_FIN => 'S_B ≤ S_A + d_A + X',
+        self::CHEVAUCHEMENT => 'A ∩ B ≥ 1',
+    ];
+
     /** Types qui portent sur deux tâches (A et B). */
     public const TYPES_A_DEUX_TACHES = [
         self::APRES_DEBUT, self::PRECEDENCE, self::DEBUT_MAX_APRES_FIN, self::CHEVAUCHEMENT,

@@ -4,27 +4,48 @@
 {% block title %}{{ titre }} — {{ projet.nom }}{% endblock %}
 
 {% block body %}
-    <p class="fil"><a href="{{ path('projet_detail', {id: projet.id}) }}">← {{ projet.nom }}</a></p>
-    <h1>{{ titre }}</h1>
+    <section class="entete-formulaire">
+        <p class="fil">
+            <a href="{{ path('projet_liste') }}">Projets</a><span>/</span>
+            <a href="{{ path('projet_detail', {id: projet.id}) }}">{{ projet.reference }} {{ projet.nom }}</a><span>/</span>
+            <span class="fil-actuel">{{ titre }}</span>
+        </p>
+        <h1 class="titre-grand">{{ titre }}</h1>
+    </section>
 
-    {{ form_start(form, {attr: {class: 'formulaire'}}) }}
-        {{ form_row(form.description) }}
-        {{ form_row(form.duree) }}
+    {{ form_start(form, {attr: {class: 'feuille formulaire'}}) }}
+        <div class="formulaire-ligne formulaire-ligne-duree">
+            {{ form_row(form.description) }}
+            <div>
+                {{ form_label(form.duree) }}
+                {{ form_errors(form.duree) }}
+                {# Compteur − / + autour du champ (contrôleur Stimulus « compteur ») #}
+                <span class="compteur" data-controller="compteur">
+                    <button type="button" data-action="compteur#moins" aria-label="Diminuer la durée">−</button>
+                    {{ form_widget(form.duree) }}
+                    <button type="button" data-action="compteur#plus" aria-label="Augmenter la durée">+</button>
+                </span>
+            </div>
+        </div>
 
-        {# Les précédentes sont des cases à cocher : on les affiche en colonnes #}
-        <fieldset class="cases">
+        {# Précédentes : cases à cocher sous forme d'étiquettes #}
+        <fieldset class="precedentes">
             <legend>{{ form_label(form.precedentes) }}</legend>
-            {% for case in form.precedentes %}
-                <label>{{ form_widget(case) }} {{ case.vars.label }}</label>
-            {% else %}
-                <p class="discret">Aucune autre tâche dans ce projet pour l'instant.</p>
-            {% endfor %}
+            <p class="aide-champ">Cochez les tâches qui doivent être terminées avant de commencer celle-ci.</p>
+            <div class="precedentes-liste">
+                {% for case in form.precedentes %}
+                    {# L'input précède le <span> : le CSS met en forme le span via input:checked + span #}
+                    <label class="coche">{{ form_widget(case) }}<span>{{ case.vars.label }}</span></label>
+                {% else %}
+                    <p class="aide-champ">Aucune autre tâche dans ce projet pour l'instant.</p>
+                {% endfor %}
+            </div>
             {{ form_errors(form.precedentes) }}
         </fieldset>
 
         <div class="actions">
-            <button type="submit" class="bouton">Enregistrer</button>
-            <a href="{{ path('projet_detail', {id: projet.id}) }}">Annuler</a>
+            <button type="submit" class="bouton bouton-grand">Enregistrer la tâche</button>
+            <a href="{{ path('projet_detail', {id: projet.id}) }}" class="bouton-discret">Annuler</a>
         </div>
     {{ form_end(form) }}
 {% endblock %}

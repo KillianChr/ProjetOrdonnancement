@@ -1,0 +1,82 @@
+{#
+    Planning d'un projet réalisable : règle graduée, barres, marges hachurées et cotées,
+    liens du chemin critique, et ligne de cote de la durée totale.
+    Variables : projet, resultat, compact (facultatif, version réduite de l'accueil).
+#}
+{% set duree = resultat.duree %}
+{% set pas = [1, 2, 5, 10, 20, 50, 100, 200]|filter(p => duree / p <= 12)|first %}
+{% set pasEtroit = [1, 2, 5, 10, 20, 50, 100, 200]|filter(p => duree / p <= 4)|first %}
+{% set pasMineur = max(1, (pas / 5)|round) %}
+{% set pourcent = 100 / duree %}
+
+{# Tâches critiques par ordre chronologique : elles forment les liens orange #}
+{% set chemin = [] %}
+{% for tache in projet.taches %}
+    {% set r = resultat.taches[tache.id] ?? null %}
+    {% if r and r.critique %}
+        {% set chemin = chemin|merge([{debut: r.tot, fin: r.tot + tache.duree, ligne: loop.index0 + 0.5}]) %}
+    {% endif %}
+{% endfor %}
+{% set chemin = chemin|sort((a, b) => a.debut <=> b.debut) %}
+
+<div class="gantt {{ compact ?? false ? 'gantt-compact' }}">
+    {# Règle du temps : un trait à chaque pas, un nombre sur les grands traits #}
+    <div class="gantt-regle" aria-hidden="true">
+        {% for t in range(0, duree, pasMineur) %}
+            <span class="trait {{ t % pas == 0 ? 'trait-long' }}" style="left: {{ t * pourcent }}%"></span>
+            {% if t % pas == 0 and (t == duree or duree - t >= pas / 2) %}
+                <span class="graduation {{ t % pasEtroit != 0 ? 'graduation-fine' }}" style="left: {{ t * pourcent }}%">{{ t }}</span>
+            {% endif %}
+        {% endfor %}
+        {% if duree % pas != 0 %}
+            <span class="trait trait-long" style="left: 100%"></span>
+            <span class="graduation" style="left: 100%">{{ duree }}</span>
+        {% endif %}
+    </div>
+
+    <div class="gantt-corps">
+        <span class="gantt-grille" style="--pas: {{ pasMineur * pourcent }}%" aria-hidden="true"></span>
+
+        {% for tache in projet.taches %}
+            {% set r = resultat.taches[tache.id] ?? null %}
+            <div class="gantt-ligne {{ r and r.critique ? 'critique' }}">
+                <p class="gantt-nom"><span class="reference">{{ tache.reference }}</span><span>{{ tache.description }}</span></p>
+                <div class="gantt-piste">
+                    {% if r %}
+                        {% set fin = r.tot + tache.duree %}
+                        {% if r.marge > 0 %}
+                            <span class="gantt-marge" style="left: {{ fin * pourcent }}%; width: {{ r.marge * pourcent }}%"></span>
+                            <span class="gantt-marge-valeur" style="left: {{ (fin + r.marge) * pourcent }}%">+{{ r.marge }}</span>
+                        {% endif %}
+                        <span class="gantt-barre" style="left: {{ r.tot * pourcent }}%; width: {{ tache.duree * pourcent }}%"></span>
+
+                        {# Infobulle d'encre, ancrée du côté où il reste de la place #}
+                        {% if r.tot > duree / 2 %}
+                            {% set position = 'right: ' ~ (100 - fin * pourcent) ~ '%' %}
+                        {% else %}
+                            {% set position = 'left: ' ~ (r.tot * pourcent) ~ '%' %}
+                        {% endif %}
+                        <span class="infobulle" style="{{ position }}">
+                            <strong>{{ tache.reference }} · {{ tache.description }}</strong>
+                            <span>S = {{ r.tot }} → {{ r.tard }}  ·  fin {{ fin }}  ·  marge {{ r.marge }}</span>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        {# Liens entre tâches critiques qui s'enchaînent, avec un point d'arrivée #}
+        <div class="gantt-liens" aria-hidden="true">
+            {% for a in chemin %}
+                {% for b in chemin|filter(c => c.debut == a.fin) %}
+                    <span class="gantt-lien" style="left: {{ b.debut * pourcent }}%; --depart: {{ min(a.ligne, b.ligne) }}; --hauteur: {{ max(a.ligne, b.ligne) - min(a.ligne, b.ligne) }}"></span>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Ligne de cote : la signature du système, ici la durée du projet #}
+    <div class="gantt-cote">
+        <div class="cote"><span>{{ duree }} u  —  durée minimale du projet</span></div>
+    </div>
+</div>

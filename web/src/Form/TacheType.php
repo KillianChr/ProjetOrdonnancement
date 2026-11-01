@@ -40,6 +40,7 @@ class TacheType extends AbstractType
             ->add('precedentes', EntityType::class, [
                 'label' => 'Tâches à terminer avant',
                 'class' => Tache::class,
+                'choice_label' => 'etiquette',
                 'multiple' => true,
                 'expanded' => true,   // cases à cocher
                 'required' => false,

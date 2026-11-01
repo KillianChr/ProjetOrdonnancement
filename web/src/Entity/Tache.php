@@ -121,6 +121,24 @@ class Tache
         return $this;
     }
 
+    /** Numéro de la tâche dans son projet (1, 2, 3…). */
+    public function getNumero(): int
+    {
+        return (int) $this->projet?->getTaches()->indexOf($this) + 1;
+    }
+
+    /** Référence affichée partout sur le site (T01, T02…). */
+    public function getReference(): string
+    {
+        return sprintf('T%02d', $this->getNumero());
+    }
+
+    /** Libellé des listes de choix (« T04 · Plomberie »). */
+    public function getEtiquette(): string
+    {
+        return $this->getReference().' · '.$this->description;
+    }
+
     /** Utilisé par les listes déroulantes / cases à cocher des formulaires. */
     public function __toString(): string
     {

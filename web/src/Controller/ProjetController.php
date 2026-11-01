@@ -17,13 +17,49 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class ProjetController extends AbstractController
 {
-    /** Page d'accueil : liste de tous les projets. */
-    #[Route('/', name: 'projet_liste', methods: ['GET'])]
-    public function liste(ProjetRepository $projets): Response
+    /** Nombre de projets affichés dans « Projets récents » sur l'accueil. */
+    private const NB_PROJETS_RECENTS = 2;
+
+    /** Page d'accueil : présentation de l'outil, exemple réel et projets récents. */
+    #[Route('/', name: 'accueil', methods: ['GET'])]
+    public function accueil(ProjetRepository $projets, CalculOrdonnancement $calcul): Response
+    {
+        $recents = $this->avecResultats(
+            $projets->findBy([], ['dateCreation' => 'DESC'], self::NB_PROJETS_RECENTS),
+            $calcul,
+        );
+
+        // L'exemple affiché est le premier projet récent dont le planning est calculable
+        $realisables = array_filter($recents, fn (array $ligne) => $ligne['resultat']['realisable']);
+
+        return $this->render('accueil.html.twig', [
+            'recents' => $recents,
+            'exemple' => $realisables ? reset($realisables) : null,
+        ]);
+    }
+
+    /** Registre : liste de tous les projets avec leur durée et un aperçu du planning. */
+    #[Route('/projets', name: 'projet_liste', methods: ['GET'])]
+    public function liste(ProjetRepository $projets, CalculOrdonnancement $calcul): Response
     {
         return $this->render('projet/liste.html.twig', [
-            'projets' => $projets->findBy([], ['dateCreation' => 'DESC']),
+            'lignes' => $this->avecResultats($projets->findBy([], ['dateCreation' => 'DESC']), $calcul),
         ]);
+    }
+
+    /**
+     * Associe à chaque projet le résultat de son calcul.
+     *
+     * @param list<Projet> $projets
+     *
+     * @return list<array{projet: Projet, resultat: array}>
+     */
+    private function avecResultats(array $projets, CalculOrdonnancement $calcul): array
+    {
+        return array_map(
+            fn (Projet $projet) => ['projet' => $projet, 'resultat' => $calcul->calculer($projet)],
+            $projets,
+        );
     }
 
     /** Création d'un nouveau projet (vide). */

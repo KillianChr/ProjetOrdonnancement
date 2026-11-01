@@ -62,6 +62,12 @@ class Projet
         return $this->id;
     }
 
+    /** Référence affichée sur le site (P-01, P-02…). */
+    public function getReference(): string
+    {
+        return sprintf('P-%02d', $this->id);
+    }
+
     public function getNom(): ?string
     {
         return $this->nom;

@@ -1,117 +1,855 @@
-/* ==========================================================
-   Styles de l'application (volontairement simples : squelette)
-   Les couleurs sont regroupées ici pour être faciles à changer.
-   ========================================================== */
+/* ==========================================================================
+   Ordonnancement — système de design « Cote »
+   La cote, c'est la mesure portée sur un plan : on lit ici des durées, des dates et des écarts.
+
+   - Encre sur papier. L'orange signal ne sert qu'au chemin critique et aux erreurs.
+   - Tout écran qui montre des dates porte une règle graduée.
+   - Schibsted Grotesk pour les textes, Martian Mono pour les nombres et les références.
+   - Contrastes forts, filets d'un pixel, aucune ombre ni transparence.
+   - Angles légèrement adoucis par rapport à la maquette : tout passe par les variables --rayon-*.
+   ========================================================================== */
+
 :root {
-    --fond: #f6f7f9;
-    --surface: #ffffff;
-    --texte: #1f2430;
-    --discret: #6b7280;
-    --bordure: #e3e6eb;
-    --principal: #2f6fde;
-    --critique: #d64545;
-    --critique-fond: #fdecec;
-    --succes-fond: #e7f6ec;
-    --succes: #1e7a3c;
+    /* Couleurs */
+    --papier: #f3f2ee;
+    --papier-fonce: #e6e4de;
+    --feuille: #ffffff;
+    --encre: #0d0d0e;
+    --encre-claire: #2b2b2e;
+    --encre-douce: #3a3b3f;
+    --graphite: #5e6066;
+    --trait: #d8d6cf;
+    --trait-leger: #eceae4;
+    --signal: #ff4f00;                /* barres, liens, pastilles : jamais de petit texte */
+    --signal-texte: #b23a00;          /* critique en petit texte (AA sur papier) */
+    --signal-pale: #ffe3d6;
+
+    /* Angles */
+    --rayon-feuille: 6px;
+    --rayon-controle: 5px;
+    --rayon-etiquette: 4px;
+    --rayon-barre: 3px;
+
+    /* Typographie */
+    --texte: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Martian Mono", ui-monospace, Consolas, monospace;
+
+    /* Mise en page */
+    --gouttiere: 40px;
+
+    /* Hachure de la marge : traits d'encre à 135°, pas de 5 px */
+    --hachure: repeating-linear-gradient(135deg, var(--encre) 0 1px, transparent 1px 5px);
 }
 
-* { box-sizing: border-box; }
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 body {
     margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--fond);
-    color: var(--texte);
+    background: var(--papier);
+    color: var(--encre);
+    font-family: var(--texte);
+    font-size: 15px;
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--principal); text-decoration: none; }
-a:hover { text-decoration: underline; }
-h1 { margin: 0 0 .5rem; }
-h2 { margin: 0; font-size: 1.2rem; }
-section { margin-top: 2rem; }
-.discret { color: var(--discret); font-size: .9rem; }
+h1, h2, h3, p { margin: 0; }
+a { color: var(--encre); text-decoration: none; }
+a:hover { color: var(--signal-texte); }
+ol, ul { margin: 0; padding: 0; list-style: none; }
+::selection { background: var(--signal-pale); }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+[hidden] { display: none !important; }
 
-/* ---------- En-tête et mise en page ---------- */
-.entete {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: .8rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--bordure);
+.lecteur-ecran {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }
-.entete nav { display: flex; gap: 1rem; align-items: center; }
-.logo { font-weight: 700; color: var(--texte); }
-.contenu { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
-.fil { margin: 0 0 .5rem; }
+
+.icone {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Styles de texte communs */
+.etiquette,
+.barre-methode,
+.fil,
+.pied-technique {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--graphite);
+}
+.etiquette-critique { color: var(--signal-texte); }
+.chiffre { font-family: var(--mono); }
+.reference { font-family: var(--mono); font-size: 12px; color: var(--graphite); }
+.chiffre-cle { font-family: var(--mono); font-weight: 500; letter-spacing: -0.06em; line-height: 0.9; }
+
+/* Feuille : surface blanche cernée d'un filet clair, sans ombre */
+.feuille {
+    background: var(--feuille);
+    border-radius: var(--rayon-feuille);
+    box-shadow: inset 0 0 0 1px var(--trait);
+}
+.feuille-encre { box-shadow: inset 0 0 0 1px var(--encre); }
+
+/* ---------- Barre du haut ---------- */
+.barre {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    height: 64px;
+    padding: 0 var(--gouttiere);
+    border-bottom: 1px solid var(--encre);
+}
+.marque {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.025em;
+}
+.marque svg { width: 22px; height: 22px; fill: var(--encre); }
+.marque .marque-critique { fill: var(--signal); }
+.barre nav { display: flex; gap: 28px; margin-right: auto; font-size: 14px; font-weight: 600; }
+.barre nav a { padding: 21px 0; }
+.barre nav a.actif { box-shadow: inset 0 -2px 0 var(--encre); }
+
+/* ---------- Page ---------- */
+.page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 var(--gouttiere) 96px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+.page > * { min-width: 0; }
+
+.confirmation {
+    justify-self: start;
+    margin-top: 24px;
+    padding: 8px 14px;
+    border-radius: var(--rayon-controle);
+    background: var(--encre);
+    color: var(--papier);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Fil d'Ariane */
+.fil { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.fil a { color: var(--graphite); }
+.fil a:hover { color: var(--signal-texte); }
+.fil-actuel { color: var(--encre); }
+
+/* Titres */
+.titre-geant {
+    font-size: clamp(56px, 10vw, 148px);
+    font-weight: 800;
+    line-height: 0.82;
+    letter-spacing: -0.06em;
+    margin-left: -6px;
+    overflow-wrap: anywhere;
+}
+.titre-geant.titre-long { font-size: clamp(44px, 6.6vw, 96px); line-height: 0.9; letter-spacing: -0.05em; margin-left: -3px; }
+.titre-grand {
+    font-size: clamp(44px, 7.5vw, 112px);
+    font-weight: 800;
+    line-height: 0.86;
+    letter-spacing: -0.055em;
+    margin-left: -4px;
+}
+.chapeau { max-width: 46ch; font-size: 18px; color: var(--graphite); text-wrap: pretty; }
+.chapeau-large { max-width: 62ch; }
+.formule-texte { font-family: var(--mono); font-size: 15px; color: var(--encre); }
+
+/* Sections : elles s'ouvrent sur un filet d'encre, titre à gauche */
+.page section > .entete-section,
+.recents > .entete-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px 20px;
+    padding: 14px 0 18px;
+    border-top: 1px solid var(--encre);
+}
+.entete-section h2 { margin-right: auto; font-size: 30px; font-weight: 800; letter-spacing: -0.035em; }
+.page > section[aria-labelledby] + section[aria-labelledby] { padding-top: 56px; }
 
 /* ---------- Boutons ---------- */
 .bouton {
-    display: inline-block; padding: .45rem .9rem; border: none; border-radius: 6px;
-    background: var(--principal); color: #fff; font: inherit; cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: var(--rayon-controle);
+    background: var(--encre);
+    color: var(--papier);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
 }
-.bouton:hover { text-decoration: none; opacity: .9; }
-.bouton-secondaire { background: var(--surface); color: var(--principal); border: 1px solid var(--principal); }
-.bouton-danger { background: var(--critique); }
-.lien-danger { background: none; border: none; color: var(--critique); cursor: pointer; font: inherit; padding: 0; }
-.actions, .actions-ligne { display: flex; gap: .8rem; align-items: center; }
-.actions form, .actions-ligne form { margin: 0; }
+.bouton:hover { background: var(--encre-claire); color: var(--papier); }
+.bouton .icone { stroke-width: 2; width: 15px; height: 15px; }
+.bouton-grand { height: 46px; padding: 0 22px; font-size: 15px; }
+.bouton-secondaire { background: transparent; color: var(--encre); box-shadow: inset 0 0 0 1px var(--encre); }
+.bouton-secondaire:hover { background: var(--papier-fonce); color: var(--encre); }
+.bouton-discret {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--rayon-controle);
+    background: transparent;
+    color: var(--graphite);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.bouton-discret:hover { color: var(--signal-texte); }
+.lien-fort { font-size: 14px; font-weight: 600; }
 
-/* ---------- Messages ---------- */
-.flash { padding: .7rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
-.flash-succes { background: var(--succes-fond); color: var(--succes); }
-.flash-erreur { background: var(--critique-fond); color: var(--critique); }
-.vide { padding: 2rem; text-align: center; background: var(--surface); border: 1px dashed var(--bordure); border-radius: 8px; }
-.aide { background: var(--surface); border-left: 3px solid var(--principal); padding: .5rem 1rem; margin-bottom: 1rem; font-size: .9rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.actions form { margin: 0; }
 
-/* ---------- Liste des projets ---------- */
-.grille-projets { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-.carte { display: block; padding: 1rem; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; color: var(--texte); }
-.carte:hover { border-color: var(--principal); text-decoration: none; }
-.carte p { margin: .3rem 0 0; }
+/* Actions d'une ligne : icônes discrètes, orange au survol pour ce qui détruit */
+.actions-ligne { display: flex; justify-content: flex-end; gap: 2px; }
+.actions-ligne form { margin: 0; }
+.actions-ligne a,
+.actions-ligne button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--rayon-controle);
+    background: transparent;
+    color: var(--graphite);
+    cursor: pointer;
+}
+.actions-ligne a:hover { background: var(--papier); color: var(--encre); }
+.actions-ligne button:hover { background: var(--signal-pale); color: var(--signal-texte); }
 
-/* ---------- Détail d'un projet ---------- */
-.titre-projet, .titre-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
-.titre-section { align-items: center; margin-bottom: .8rem; }
-.resume { display: flex; gap: 1rem; flex-wrap: wrap; }
-.resume > div { flex: 1; min-width: 160px; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; padding: .8rem 1rem; }
-.resume strong { display: block; font-size: 1.8rem; }
+/* ---------- Accueil ---------- */
+.accroche { display: grid; gap: 28px; padding: 72px 0 56px; }
+.accroche h1 {
+    max-width: 13ch;
+    margin-left: -5px;
+    font-size: clamp(48px, 8.4vw, 128px);
+    font-weight: 800;
+    line-height: 0.88;
+    letter-spacing: -0.055em;
+    text-wrap: balance;
+}
+.accroche h1 span { color: var(--signal); }
+.accroche-suite { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 28px 64px; }
+.accroche-suite p { max-width: 56ch; font-size: 19px; color: var(--encre-douce); text-wrap: pretty; }
+
+.exemple { padding: 22px 28px; }
+.exemple-entete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; margin-bottom: 18px; }
+
+.etapes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 32px; margin-top: 72px; border-top: 1px solid var(--encre); }
+.etapes > div { display: grid; gap: 14px; align-content: start; padding: 30px 0 40px; }
+.etapes h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
+.etapes p { color: var(--encre-douce); }
+.etape-exemple { margin-top: 8px; padding: 12px 14px; }
+.etape-tache { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; }
+.etape-tache .chiffre { font-size: 12px; }
+.etape-contrainte { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--graphite); }
+.etape-contrainte .formule { font-family: var(--mono); font-size: 20px; letter-spacing: -0.03em; color: var(--encre); }
+.etape-chemin { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 12px; color: var(--signal-texte); }
+
+.recents-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; }
+.recent { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: end; align-content: start; padding: 22px 24px; }
+.recent:hover { box-shadow: inset 0 0 0 1px var(--encre); color: var(--encre); }
+.recent-titre { display: grid; gap: 4px; }
+.recent-titre strong { font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -0.04em; }
+.recent-duree { font-size: 13px; font-weight: 600; }
+.recent-duree .chiffre-cle { font-size: 44px; }
+.recent .apercu { grid-column: 1 / -1; }
+
+.pied {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 22px var(--gouttiere) 32px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 32px;
+    border-top: 1px solid var(--encre);
+    font-size: 14px;
+    color: var(--graphite);
+}
+.pied strong { color: var(--encre); }
+.pied-technique { text-transform: none; font-size: 11px; letter-spacing: 0.04em; }
+
+/* ---------- Registre des projets ---------- */
+.entete-registre { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px 64px; align-items: end; padding: 44px 0 40px; }
+.entete-registre > div { display: grid; gap: 18px; }
+.entete-registre .chapeau { max-width: 52ch; }
+.registre-total { padding-bottom: 6px; font-size: 16px; font-weight: 600; }
+.registre-total .chiffre-cle { font-size: 64px; margin-right: 8px; }
+
+.registre { border-top: 1px solid var(--encre); --colonnes: 56px minmax(220px, 1.3fr) minmax(200px, 1fr) 96px 64px 76px 92px 96px; }
+.registre-entete,
+.registre-ligne { display: grid; grid-template-columns: var(--colonnes); gap: 24px; align-items: center; padding-inline: 24px; }
+.registre-entete { height: 44px; font-size: 10px; }
+.registre-entete span:nth-child(n + 4) { text-align: right; }
+.registre-liste { display: grid; gap: 12px; }
+.registre-ligne { padding-block: 26px; }
+.registre-ligne:hover { box-shadow: inset 0 0 0 1px var(--encre); color: var(--encre); }
+.registre-ref { align-self: start; padding-top: 8px; }
+.registre-nom { display: grid; gap: 6px; min-width: 0; }
+.registre-nom strong { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; overflow-wrap: anywhere; }
+.registre-nom span { font-size: 14px; color: var(--graphite); }
+.registre-duree { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; font-size: 13px; font-weight: 600; }
+.registre-duree .chiffre-cle { font-size: 40px; line-height: 1; letter-spacing: -0.05em; }
+.registre-valeur { text-align: right; font-size: 16px; }
+.registre-critiques { color: var(--signal-texte); }
+.registre-date { text-align: right; font-size: 12px; color: var(--graphite); }
+.registre-impossible { font-size: 14px; font-weight: 600; color: var(--graphite); }
+.registre-nouveau {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 24px;
+    border-radius: var(--rayon-feuille);
+    box-shadow: inset 0 0 0 1px var(--trait);
+    background-image: repeating-linear-gradient(135deg, var(--papier-fonce) 0 1px, transparent 1px 7px);
+    color: var(--graphite);
+    font-weight: 600;
+}
+.registre-nouveau:hover { box-shadow: inset 0 0 0 1px var(--encre); color: var(--encre); }
+.bouton-icone { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: var(--rayon-controle); background: var(--encre); color: var(--papier); }
+
+/* Aperçu du planning : une ligne de 5 px par tâche */
+.apercu {
+    display: grid;
+    gap: 3px;
+    padding: 6px 0;
+    background-image: repeating-linear-gradient(90deg, var(--trait-leger) 0 1px, transparent 1px var(--pas));
+}
+.apercu-ligne { position: relative; height: 5px; }
+.apercu-ligne span { position: absolute; top: 0; bottom: 0; min-width: 3px; border-radius: 2px; background: var(--encre); }
+.apercu-ligne span.critique { background: var(--signal); }
+
+/* ---------- En-tête d'un projet et cartouche ---------- */
+.entete-projet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+    gap: 40px 64px;
+    align-items: end;
+    padding: 44px 0 40px;
+}
+.entete-projet-titre { display: grid; gap: 18px; justify-items: start; min-width: 0; }
+.entete-projet-titre .actions { margin-top: 6px; }
+
+.cartouche {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
+    overflow: hidden;
+    background: var(--feuille);
+    border: 1px solid var(--encre);
+    border-radius: var(--rayon-feuille);
+}
+.cartouche > div { display: grid; gap: 2px; align-content: start; padding: 12px 20px; }
+.cartouche > div:nth-child(2),
+.cartouche > div:nth-child(4) { border-right: 1px solid var(--trait); }
+.cartouche > div:nth-child(2),
+.cartouche > div:nth-child(3) { border-bottom: 1px solid var(--trait); }
+.cartouche dt { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--graphite); }
+.cartouche dd { margin: 0; font-size: 22px; }
+.cartouche .cartouche-principal { grid-column: 1 / -1; gap: 14px; padding: 16px 20px 18px; border-bottom: 1px solid var(--encre); }
+.cartouche-principal dd { display: flex; align-items: baseline; gap: 12px; font-size: 16px; font-weight: 600; }
+.cartouche-chiffre { font-family: var(--mono); font-size: clamp(72px, 7vw, 104px); font-weight: 500; line-height: 0.9; letter-spacing: -0.06em; }
+.cartouche-vide { color: var(--trait); }
+.cartouche-critiques dt,
+.cartouche-critiques dd { color: var(--signal-texte); }
+.cartouche .etat { display: inline-flex; align-items: center; gap: 8px; padding-top: 4px; font-size: 16px; font-weight: 700; }
+.etat::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.cartouche .etat-vide { color: var(--graphite); }
+.cartouche .etat-impossible { color: var(--signal-texte); }
+.etat-impossible::before { background: var(--signal); }
+
+/* ---------- Alerte ---------- */
+.alerte {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 40px;
+    padding: 18px 22px;
+    border-left: 4px solid var(--signal);
+    border-radius: var(--rayon-etiquette);
+    background: var(--signal-pale);
+}
+.alerte-titre { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: var(--signal-texte); }
+.alerte-aide { font-size: 14px; color: var(--encre-douce); }
+
+/* ---------- Chemin critique ---------- */
+.chemin { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; padding: 18px 0 34px; border-top: 1px solid var(--encre); }
+/* Toujours sur une ligne : un retour à la ligne laisserait une flèche orpheline. Défile si elle dépasse. */
+.chemin ol { display: flex; align-items: center; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.chemin ol::-webkit-scrollbar { display: none; }
+.chemin li { display: inline-flex; flex: none; align-items: baseline; gap: 8px; padding: 6px 0; font-size: 16px; white-space: nowrap; }
+.chemin li strong { font-weight: 700; letter-spacing: -0.01em; }
+.chemin .reference { font-size: 11px; color: var(--signal-texte); }
+/* Flèche orange entre deux tâches */
+.chemin li + li::before {
+    content: "";
+    align-self: center;
+    width: 30px;
+    height: 8px;
+    margin: 0 14px 0 6px;
+    background: var(--signal);
+    clip-path: polygon(0 37%, 80% 37%, 80% 0, 100% 50%, 80% 100%, 80% 63%, 0 63%);
+}
+
+/* ---------- Légende ---------- */
+.legende { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; font-weight: 600; color: var(--encre-douce); }
+.legende li { display: inline-flex; align-items: center; gap: 8px; }
+.legende span { width: 28px; height: 12px; border-radius: var(--rayon-barre); }
+.legende-tache { background: var(--encre); }
+.legende-critique { background: var(--signal); }
+.legende-marge { background-image: var(--hachure); box-shadow: inset 0 0 0 1px var(--encre); }
+
+/* ---------- Planning (Gantt) ---------- */
+.feuille-planning { padding: 20px 28px 22px; }
+
+.gantt { --noms: 230px; --espace: 24px; --ligne: 40px; --barre: 14px; }
+.gantt-compact { --noms: 170px; --ligne: 30px; --barre: 12px; }
+
+/* Règle graduée */
+.gantt-regle { position: relative; height: 30px; margin-left: calc(var(--noms) + var(--espace)); border-bottom: 1px solid var(--encre); }
+.trait { position: absolute; bottom: 0; width: 1px; height: 5px; background: var(--encre); }
+.trait-long { height: 10px; }
+.graduation { position: absolute; top: 0; transform: translateX(-50%); font-family: var(--mono); font-size: 10.5px; color: var(--encre-douce); }
+
+.gantt-corps { position: relative; padding-top: 6px; }
+/* Verticales de graduation et liens : alignés sur la colonne du temps */
+.gantt-grille,
+.gantt-liens { position: absolute; top: 6px; bottom: 0; right: 0; left: calc(var(--noms) + var(--espace)); }
+.gantt-grille { background-image: repeating-linear-gradient(90deg, var(--trait-leger) 0 1px, transparent 1px var(--pas)); }
+.gantt-liens { pointer-events: none; }
+
+.gantt-ligne {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--noms) minmax(0, 1fr);
+    gap: var(--espace);
+    align-items: center;
+    height: var(--ligne);
+    margin-inline: -10px;
+    padding-inline: 10px;
+    border-radius: var(--rayon-etiquette);
+}
+.gantt-ligne:hover { z-index: 3; background: rgba(13, 13, 14, 0.035); }
+
+.gantt-nom { display: flex; align-items: center; gap: 12px; min-width: 0; font-size: 15px; font-weight: 600; }
+.gantt-nom > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gantt-nom .reference { font-size: 11px; }
+.gantt-ligne.critique .reference { color: var(--signal-texte); }
+.gantt-compact .gantt-nom { font-size: 14px; gap: 10px; }
+
+.gantt-piste { position: relative; height: 100%; }
+.gantt-barre,
+.gantt-marge { position: absolute; top: 50%; height: var(--barre); transform: translateY(-50%); }
+.gantt-barre { min-width: 6px; border-radius: var(--rayon-barre); background: var(--encre); }
+.gantt-ligne.critique .gantt-barre { background: var(--signal); }
+.gantt-marge { border-radius: 0 var(--rayon-barre) var(--rayon-barre) 0; background-image: var(--hachure); box-shadow: inset 0 0 0 1px var(--encre); }
+.gantt-marge-valeur { position: absolute; top: 50%; padding-left: 8px; transform: translateY(-50%); font-family: var(--mono); font-size: 11px; color: var(--encre-douce); }
+.gantt-compact .gantt-marge-valeur { display: none; }
+
+/* Lien critique : trait orange vertical et point d'arrivée, au-dessus des barres */
+.gantt-lien {
+    position: absolute;
+    z-index: 2;
+    top: calc(var(--ligne) * var(--depart));
+    height: calc(var(--ligne) * var(--hauteur));
+    width: 2px;
+    margin-left: -1px;
+    background: var(--signal);
+}
+.gantt-lien::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 0 2px var(--feuille);
+}
+
+/* Infobulle d'encre au survol d'une ligne */
+.infobulle {
+    display: none;
+    position: absolute;
+    z-index: 5;
+    bottom: calc(var(--ligne) - 6px);
+    gap: 2px;
+    padding: 8px 12px;
+    border-radius: var(--rayon-controle);
+    background: var(--encre);
+    color: var(--papier);
+    white-space: nowrap;
+    pointer-events: none;
+}
+.infobulle strong { font-size: 14px; }
+.infobulle span { font-family: var(--mono); font-size: 10.5px; color: #c9c7c0; }
+.gantt-ligne:hover .infobulle { display: grid; }
+
+/* Ligne de cote : la signature du système */
+.gantt-cote { margin: 14px 0 0 calc(var(--noms) + var(--espace)); }
+.cote { position: relative; height: 34px; }
+.cote::before { content: ""; position: absolute; inset: 16px 0 auto; height: 1px; background: var(--encre); }
+/* Butées verticales et petites obliques, aux deux extrémités */
+.cote::after {
+    content: "";
+    position: absolute;
+    inset: 6px 0;
+    border-inline: 1px solid var(--encre);
+    background:
+        linear-gradient(135deg, transparent calc(50% - 0.5px), var(--encre) calc(50% - 0.5px), var(--encre) calc(50% + 0.5px), transparent calc(50% + 0.5px)) -5px 50% / 11px 11px no-repeat,
+        linear-gradient(135deg, transparent calc(50% - 0.5px), var(--encre) calc(50% - 0.5px), var(--encre) calc(50% + 0.5px), transparent calc(50% + 0.5px)) calc(100% + 5px) 50% / 11px 11px no-repeat;
+}
+.cote span {
+    position: absolute;
+    z-index: 1;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 14px;
+    background: var(--feuille);
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: pre;
+}
 
 /* ---------- Tableau des tâches ---------- */
-.tableau { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--bordure); }
-.tableau th, .tableau td { padding: .5rem .7rem; text-align: left; border-bottom: 1px solid var(--bordure); }
-.tableau th { font-size: .85rem; color: var(--discret); font-weight: 600; }
-.tableau tr.critique td { background: var(--critique-fond); }
-.tableau tr.critique td:first-child { border-left: 3px solid var(--critique); }
-.legende { display: flex; align-items: center; gap: .4rem; }
-.pastille-critique { display: inline-block; width: 12px; height: 12px; background: var(--critique-fond); border-left: 3px solid var(--critique); }
+.tableau-cadre { overflow-x: auto; }
+.taches { width: 100%; min-width: 860px; border-collapse: collapse; }
+.taches th {
+    height: 42px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--encre);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--graphite);
+}
+.taches td { height: 50px; padding: 0 8px; border-bottom: 1px solid var(--trait-leger); }
+.taches th:first-child,
+.taches td:first-child { padding-left: 24px; }
+.taches th:last-child,
+.taches td:last-child { padding-right: 16px; }
+.taches tbody tr:last-child td { border-bottom: 0; }
+.taches tbody tr:hover { background: var(--papier); }
+.taches .nombre { text-align: right; font-family: var(--mono); font-size: 13px; }
+.taches th.nombre { font-size: 10px; }
+.taches-nom { font-weight: 600; }
+.taches-apres { font-family: var(--mono); font-size: 12px; color: var(--graphite); }
+.taches tr.critique .reference { color: var(--signal-texte); }
 
-/* ---------- Gantt ---------- */
-.gantt { background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; padding: 1rem; }
-.gantt-ligne { display: flex; align-items: center; gap: .8rem; margin-bottom: .4rem; }
-.gantt-nom { width: 140px; flex-shrink: 0; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gantt-piste { position: relative; flex: 1; height: 22px; background: var(--fond); border-radius: 4px; }
-.gantt-barre { position: absolute; top: 0; bottom: 0; background: var(--principal); border-radius: 4px; }
-.gantt-barre.critique { background: var(--critique); }
-.gantt-axe { display: flex; justify-content: space-between; margin-left: calc(140px + .8rem); font-size: .8rem; color: var(--discret); }
+/* Marge : cotée en clair, ou étiquette orange si elle est nulle */
+.marge { display: inline-block; padding: 2px 8px; border-radius: var(--rayon-etiquette); box-shadow: inset 0 0 0 1px var(--trait); font-size: 11.5px; white-space: nowrap; }
+.critique .marge { background: var(--signal-pale); box-shadow: none; color: var(--signal-texte); }
+
+.vide { padding: 28px 24px; color: var(--graphite); }
 
 /* ---------- Contraintes ---------- */
-.liste-contraintes { list-style: none; padding: 0; margin: 0; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; }
-.liste-contraintes li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--bordure); }
-.liste-contraintes li:last-child { border-bottom: none; }
+.contraintes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 16px; }
+.contrainte { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 16px; padding: 20px 22px; }
+.contrainte .etiquette { font-size: 10px; }
+.contrainte .actions-ligne { margin: -8px -10px 0 0; }
+.contrainte-formule { grid-column: 1 / -1; font-family: var(--mono); font-size: 30px; font-weight: 500; letter-spacing: -0.03em; }
+.contrainte-phrase { grid-column: 1 / -1; font-size: 14px; color: var(--graphite); }
 
 /* ---------- Formulaires ---------- */
-.formulaire { max-width: 560px; background: var(--surface); border: 1px solid var(--bordure); border-radius: 8px; padding: 1.2rem; }
-.formulaire > div, .formulaire fieldset { margin-bottom: 1rem; }
-.formulaire label { display: block; font-weight: 600; margin-bottom: .3rem; }
-.formulaire input[type=text], .formulaire input[type=number], .formulaire textarea, .formulaire select {
-    width: 100%; padding: .5rem; border: 1px solid var(--bordure); border-radius: 6px; font: inherit;
-}
-.formulaire ul { color: var(--critique); margin: .3rem 0; padding-left: 1.2rem; }
-.cases { border: 1px solid var(--bordure); border-radius: 6px; padding: .6rem 1rem; }
-.cases legend label { margin: 0; }
-.cases > label { display: inline-flex; align-items: center; gap: .3rem; font-weight: normal; margin-right: 1rem; }
+.entete-formulaire { display: grid; gap: 18px; padding: 44px 0 40px; }
 
-/* ---------- Téléphone ---------- */
+.formulaire { display: grid; gap: 20px; max-width: 760px; padding: 24px; }
+.formulaire > div,
+.formulaire-ligne > div { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.formulaire-ligne { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.formulaire-ligne-duree { grid-template-columns: minmax(0, 1fr) 170px; }
+.formulaire .actions { margin-top: 4px; }
+
+.formulaire label,
+.precedentes legend {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--graphite);
+}
+.formulaire input[type="text"],
+.formulaire input[type="number"],
+.formulaire textarea,
+.formulaire select {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--rayon-controle);
+    box-shadow: inset 0 0 0 1px var(--encre);
+    background: var(--feuille);
+    color: var(--encre);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+}
+.formulaire textarea { height: auto; min-height: 110px; padding: 10px 12px; font-weight: 400; resize: vertical; }
+.formulaire input:focus,
+.formulaire textarea:focus,
+.formulaire select:focus { outline: none; box-shadow: inset 0 0 0 2px var(--signal); }
+
+/* Erreurs de validation Symfony (rendues en liste) */
+.formulaire ul,
+.formulaire-contrainte ul { font-size: 13px; font-weight: 600; color: var(--signal-texte); }
+.formulaire div:has(> ul) input,
+.formulaire div:has(> ul) select { box-shadow: inset 0 0 0 2px var(--signal); }
+
+/* Compteur − / + */
+.compteur { display: flex; align-items: center; height: 44px; overflow: hidden; border: 1px solid var(--encre); border-radius: var(--rayon-controle); background: var(--feuille); }
+.compteur button { width: 42px; height: 42px; flex: none; border: 0; background: transparent; color: var(--encre); font: inherit; font-size: 17px; cursor: pointer; }
+.compteur button:first-child { border-right: 1px solid var(--trait); }
+.compteur button:last-child { border-left: 1px solid var(--trait); }
+.compteur button:hover { background: var(--papier); }
+.formulaire .compteur input[type="number"] {
+    min-width: 0;
+    height: 42px;
+    padding: 0 4px;
+    box-shadow: none;
+    border-radius: 0;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+.compteur input::-webkit-outer-spin-button,
+.compteur input::-webkit-inner-spin-button { margin: 0; appearance: none; }
+.formulaire .compteur input:focus { box-shadow: inset 0 0 0 2px var(--signal); }
+
+/* Précédentes à cocher */
+.precedentes { min-width: 0; margin: 0; padding: 0; border: 0; }
+.precedentes legend { padding: 0; }
+.aide-champ { margin: 4px 0 12px; font-size: 13px; color: var(--graphite); }
+.precedentes-liste { display: flex; flex-wrap: wrap; gap: 8px; }
+.coche { position: relative; }
+.coche input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.formulaire .coche { font-family: var(--texte); font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--encre); }
+.coche span {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    padding: 0 14px 0 10px;
+    border-radius: var(--rayon-controle);
+    box-shadow: inset 0 0 0 1px var(--trait);
+    font-weight: 600;
+}
+.coche span::before { content: ""; width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--encre); }
+.coche input:checked + span { background: var(--encre); box-shadow: none; color: var(--papier); }
+.coche input:checked + span::before { background: var(--papier); box-shadow: inset 0 0 0 3px var(--encre), inset 0 0 0 7px var(--signal); }
+.coche input:focus-visible + span { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* ---------- Formulaire de contrainte ---------- */
+.disposition-contrainte { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; padding-top: 28px; border-top: 1px solid var(--encre); }
+.formulaire-contrainte { flex: 1 1 560px; min-width: 0; display: grid; gap: 36px; }
+.formulaire-contrainte section { display: grid; gap: 14px; }
+.formulaire-contrainte h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
+.champs-contrainte { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); max-width: none; padding: 22px 20px; }
+.champs-contrainte div { display: grid; gap: 8px; align-content: start; min-width: 0; }
+
+.types { display: grid; overflow: hidden; }
+.type {
+    position: relative;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--trait-leger);
+    cursor: pointer;
+}
+.type:last-child { border-bottom: 0; }
+.type:hover { background: var(--papier); }
+.type input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.type-coche { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--encre); }
+.type-coche::after { content: ""; width: 10px; height: 10px; border-radius: 2px; }
+.type-libelle { font-weight: 500; }
+.type-symbole { font-family: var(--mono); font-size: 12.5px; color: var(--graphite); }
+.type:has(input:checked) { background: var(--papier); box-shadow: inset 0 0 0 1.5px var(--encre); }
+.type:has(input:checked) .type-coche::after { background: var(--signal); }
+.type:has(input:checked) .type-libelle { font-weight: 700; }
+.type:has(input:checked) .type-symbole { color: var(--encre); }
+.type:has(input:focus-visible) { outline: 2px solid var(--signal); outline-offset: -2px; }
+
+/* Panneau « Lecture » : la contrainte expliquée, sur une plaque d'encre */
+.lecture {
+    --cote-lecture: #ff6a26;
+    flex: 1 1 420px;
+    max-width: 560px;
+    min-width: 0;
+    position: sticky;
+    top: 24px;
+    display: grid;
+    gap: 26px;
+    padding: 28px 28px 30px;
+    border-radius: var(--rayon-feuille);
+    background: var(--encre);
+    color: var(--papier);
+}
+.lecture-entete,
+.lecture-arcs > span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #a9a7a0; }
+.lecture-entete { display: flex; justify-content: space-between; gap: 12px; }
+.lecture-code { color: var(--cote-lecture); }
+.lecture-texte { display: grid; gap: 10px; font-size: 17px; line-height: 1.45; color: #d9d7d0; }
+.lecture-formule { font-family: var(--mono); font-size: 40px; font-weight: 500; line-height: 1.15; letter-spacing: -0.03em; color: var(--papier); overflow-wrap: anywhere; }
+.lecture-formule-longue { font-size: 22px; }
+
+.lecture-schema { display: grid; gap: 10px; padding: 18px 18px 14px; border-radius: var(--rayon-controle); box-shadow: inset 0 0 0 1px var(--encre-douce); }
+.schema-ligne { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 30px; }
+.schema-nom { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.schema-lettre { margin-right: 6px; font-family: var(--mono); font-size: 11px; color: #a9a7a0; }
+.schema-lettre-B { color: var(--cote-lecture); }
+.schema-piste,
+.schema-mesure { position: relative; height: 30px; }
+.schema-mesure { height: 40px; }
+.schema-barre { position: absolute; top: 8px; bottom: 8px; border-radius: var(--rayon-barre); transition: left 0.35s cubic-bezier(0.3, 0.7, 0.2, 1), width 0.35s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.schema-zone { position: absolute; top: 4px; bottom: 4px; background-image: repeating-linear-gradient(135deg, #6e6f74 0 1px, transparent 1px 5px); }
+.schema-fenetre { position: absolute; top: 4px; bottom: 4px; border: 1px dashed var(--papier); border-radius: var(--rayon-etiquette); }
+.schema-chevauchement { position: absolute; top: 2px; bottom: 2px; border-radius: var(--rayon-etiquette); box-shadow: inset 0 0 0 2px var(--signal); }
+.schema-repere { position: absolute; top: 0; bottom: 22px; border-left: 1px dashed #a9a7a0; }
+.schema-cote { position: absolute; top: 8px; height: 1px; background: var(--cote-lecture); transition: left 0.35s, width 0.35s; }
+.schema-cote-butee { position: absolute; top: 2px; width: 1px; height: 13px; background: var(--cote-lecture); }
+.schema-cote-texte { position: absolute; top: 18px; transform: translateX(-50%); font-family: var(--mono); font-size: 11px; white-space: nowrap; color: var(--cote-lecture); }
+
+.lecture-arcs { display: grid; gap: 8px; }
+.lecture-arcs div { display: flex; flex-wrap: wrap; gap: 8px; }
+.lecture-arcs div span { padding: 6px 10px; border-radius: var(--rayon-etiquette); box-shadow: inset 0 0 0 1px var(--encre-douce); font-family: var(--mono); font-size: 13px; }
+
+.lecture-effet { display: flex; gap: 12px; padding-top: 18px; border-top: 1px solid var(--encre-douce); font-size: 14px; color: #d9d7d0; }
+.lecture-effet::before { content: ""; flex: none; width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: var(--papier); }
+.lecture-effet-alerte::before { background: var(--signal); }
+.lecture-effet:empty,
+.lecture-schema:empty,
+.lecture-formule:empty { display: none; }
+
+/* ==========================================================================
+   Écrans moyens
+   ========================================================================== */
+@media (max-width: 1180px) {
+    .registre { --colonnes: 56px minmax(0, 1fr) minmax(140px, 0.7fr) 84px; }
+    .registre-entete span:nth-child(n + 5),
+    .registre-valeur,
+    .registre-date { display: none; }
+}
+
+@media (max-width: 960px) {
+    .barre-methode { display: none; }
+    .barre { gap: 24px; }
+    .barre > .bouton { margin-left: auto; }
+    .barre nav { margin-right: 0; }
+
+    .entete-projet { grid-template-columns: minmax(0, 1fr); }
+    .cartouche { max-width: 460px; }
+    .lecture { position: static; max-width: none; }
+}
+
+/* ==========================================================================
+   Téléphone
+   ========================================================================== */
 @media (max-width: 640px) {
-    .tableau { display: block; overflow-x: auto; }
-    .gantt-nom { width: 90px; }
-    .gantt-axe { margin-left: calc(90px + .8rem); }
+    :root { --gouttiere: 16px; }
+
+    .barre { gap: 14px; }
+    .barre nav { display: none; }
+    .marque { font-size: 16px; }
+
+    .page { padding-bottom: 64px; }
+    .accroche { padding: 40px 0 36px; }
+    .accroche-suite p { font-size: 17px; }
+    .chapeau { font-size: 16px; }
+    .entete-projet,
+    .entete-registre,
+    .entete-formulaire { padding: 28px 0 28px; }
+    .entete-registre { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+
+    .exemple,
+    .feuille-planning { padding: 16px 14px; }
+
+    .gantt,
+    .gantt-compact { --noms: 96px; --espace: 8px; --ligne: 34px; --barre: 10px; }
+    .gantt-nom { gap: 6px; font-size: 12px; }
+    .gantt-compact .gantt-nom { font-size: 12px; gap: 6px; }
+    .gantt-nom .reference { font-size: 10px; }
+    .graduation-fine,
+    .gantt-marge-valeur,
+    .infobulle,
+    .gantt-ligne:hover .infobulle { display: none; }
+    .cote span { padding: 0 6px; font-size: 10.5px; }
+
+    .chemin { padding-bottom: 24px; }
+    .chemin li { font-size: 14px; }
+    .chemin li + li::before { width: 18px; margin: 0 6px 0 2px; }
+
+    .registre-entete { display: none; }
+    .registre { --colonnes: minmax(0, 1fr) auto; border-top: 0; }
+    .registre-ligne { gap: 14px 16px; padding: 18px 16px; }
+    .registre-ref { display: none; }
+    .registre-nom { grid-column: 1; }
+    .registre-nom strong { font-size: 26px; }
+    .registre-duree { grid-column: 2; grid-row: 1; }
+    .registre-ligne .apercu,
+    .registre-impossible { grid-column: 1 / -1; }
+    .registre-nouveau { padding: 16px; }
+
+    .formulaire { padding: 18px 16px; }
+    .formulaire-ligne-duree { grid-template-columns: minmax(0, 1fr); }
+    .lecture { padding: 20px 18px 22px; }
+    .lecture-formule { font-size: 30px; }
+    .lecture-formule-longue { font-size: 18px; }
+    .schema-ligne { grid-template-columns: 84px minmax(0, 1fr); }
+    .type { gap: 12px; padding: 13px 14px; }
+    .type-symbole { display: none; }
+    .type { grid-template-columns: 20px minmax(0, 1fr); }
+}
+
+/* Mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+    .schema-barre,
+    .schema-cote { transition: none; }
 }

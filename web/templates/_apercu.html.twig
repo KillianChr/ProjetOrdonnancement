@@ -1,0 +1,13 @@
+{#
+    Aperçu miniature du planning d'un projet (registre et accueil).
+    Variables : projet, resultat (réalisable).
+#}
+{% set pourcent = 100 / resultat.duree %}
+<span class="apercu" style="--pas: {{ pourcent }}%" aria-hidden="true">
+    {% for tache in projet.taches %}
+        {% set r = resultat.taches[tache.id] ?? null %}
+        <span class="apercu-ligne">
+            {% if r %}<span class="{{ r.critique ? 'critique' }}" style="left: {{ r.tot * pourcent }}%; width: {{ tache.duree * pourcent }}%"></span>{% endif %}
+        </span>
+    {% endfor %}
+</span>

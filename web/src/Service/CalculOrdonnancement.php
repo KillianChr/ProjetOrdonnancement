@@ -79,7 +79,7 @@ class CalculOrdonnancement
         [$donnees, $idsBase] = $this->versJson($projet);
 
         $process = new Process([$this->python, $script]);
-        $process->setInput(json_encode($donnees, JSON_THROW_ON_ERROR));
+        $process->setInput(json_encode($donnees, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE));
         $process->setTimeout(self::DELAI_MAX);
         // Force Python à lire et écrire en UTF-8 (sinon les accents posent problème sous Windows)
         $process->setEnv(['PYTHONIOENCODING' => 'utf-8', 'PYTHONUTF8' => '1']);

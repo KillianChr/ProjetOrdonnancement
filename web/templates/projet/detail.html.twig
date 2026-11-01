@@ -3,150 +3,232 @@
     Variables :
       - projet   : l'entité Projet
       - resultat : tableau renvoyé par CalculOrdonnancement::calculer()
-                   (realisable, duree, taches indexées par id en base, erreur)
+                   (realisable, duree, taches indexées par id en base => {tot, tard, marge, critique}, erreur)
+
+    Ordre de lecture : titre et cartouche, chemin critique, planning, tâches, contraintes.
 #}
 {% extends 'base.html.twig' %}
 
 {% block title %}{{ projet.nom }} — Ordonnancement{% endblock %}
 
+{# Icônes des actions de ligne #}
+{% macro icone_modifier() %}
+    <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+{% endmacro %}
+{% macro icone_supprimer() %}
+    <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+{% endmacro %}
+
+{# Numéro de tâche en indice (S₃) #}
+{% macro indice(tache) %}{{ tache.numero|replace({'0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉'}) }}{% endmacro %}
+
+{# Écriture mathématique d'une contrainte #}
+{% macro formule(c) %}
+    {%- set A = _self.indice(c.tacheA) -%}
+    {%- set B = c.tacheB ? _self.indice(c.tacheB) : '' -%}
+    {%- set x = c.valeur ?? 0 -%}
+    {%- if c.type == 'date_fixe' -%}S{{ A }} = {{ x }}
+    {%- elseif c.type == 'date_min' -%}S{{ A }} ≥ {{ x }}
+    {%- elseif c.type == 'date_max' -%}S{{ A }} ≤ {{ x }}
+    {%- elseif c.type == 'apres_debut' -%}S{{ B }} ≥ S{{ A }} + {{ x }}
+    {%- elseif c.type == 'precedence' -%}S{{ B }} ≥ S{{ A }} + {{ c.tacheA.duree }}
+    {%- elseif c.type == 'debut_max_apres_fin' -%}S{{ B }} ≤ S{{ A }} + {{ c.tacheA.duree }} + {{ x }}
+    {%- else -%}{{ c.tacheA.reference }} ∩ {{ c.tacheB.reference }} ≥ 1
+    {%- endif -%}
+{% endmacro %}
+
+{# Une contrainte en phrase #}
+{% macro phrase(c) %}
+    {%- set a = c.tacheA.reference ~ ' ' ~ c.tacheA.description -%}
+    {%- set b = c.tacheB ? c.tacheB.reference ~ ' ' ~ c.tacheB.description : '' -%}
+    {%- set x = c.valeur ?? 0 -%}
+    {%- if c.type == 'date_fixe' -%}{{ a }} commence exactement à la date {{ x }}.
+    {%- elseif c.type == 'date_min' -%}{{ a }} ne commence pas avant la date {{ x }}.
+    {%- elseif c.type == 'date_max' -%}{{ a }} commence au plus tard à la date {{ x }}.
+    {%- elseif c.type == 'apres_debut' -%}{{ b }} commence au moins {{ x }} après le début de {{ a }}.
+    {%- elseif c.type == 'precedence' -%}{{ b }} commence après la fin de {{ a }}.
+    {%- elseif c.type == 'debut_max_apres_fin' -%}{{ b }} commence au plus {{ x }} après la fin de {{ a }}.
+    {%- else -%}{{ a }} et {{ b }} se déroulent en même temps pendant au moins une unité.
+    {%- endif -%}
+{% endmacro %}
+
 {% block body %}
-    {# ---------- En-tête du projet ---------- #}
-    <div class="titre-projet">
-        <div>
-            <h1>{{ projet.nom }}</h1>
-            {% if projet.description %}<p class="discret">{{ projet.description }}</p>{% endif %}
-        </div>
-        <div class="actions">
-            <a href="{{ path('projet_modifier', {id: projet.id}) }}" class="bouton bouton-secondaire">Modifier</a>
-            <form method="post" action="{{ path('projet_supprimer', {id: projet.id}) }}"
-                  onsubmit="return confirm('Supprimer ce projet et toutes ses tâches ?');">
-                <input type="hidden" name="_token" value="{{ csrf_token('supprimer_projet_' ~ projet.id) }}">
-                <button class="bouton bouton-danger">Supprimer</button>
-            </form>
-        </div>
-    </div>
+    {% set nbTaches = projet.taches|length %}
+    {% set nbCritiques = resultat.taches|filter(t => t.critique)|length %}
+    {% set vide = nbTaches == 0 %}
 
-    {# ---------- Résumé du calcul ---------- #}
-    {% if projet.taches is not empty %}
-        {% if resultat.erreur %}
-            <div class="flash flash-erreur">⚠️ {{ resultat.erreur }}</div>
-        {% elseif resultat.realisable %}
-            <div class="resume">
-                <div><span class="discret">Durée minimale du projet</span><strong>{{ resultat.duree }}</strong></div>
-                <div><span class="discret">Tâches</span><strong>{{ projet.taches|length }}</strong></div>
-                <div><span class="discret">Tâches critiques</span><strong>{{ resultat.taches|filter(t => t.critique)|length }}</strong></div>
+    {# Tâches critiques dans l'ordre chronologique #}
+    {% set chemin = [] %}
+    {% for tache in projet.taches %}
+        {% set r = resultat.taches[tache.id] ?? null %}
+        {% if r and r.critique %}
+            {% set chemin = chemin|merge([{tache: tache, debut: r.tot}]) %}
+        {% endif %}
+    {% endfor %}
+    {% set chemin = chemin|sort((a, b) => a.debut <=> b.debut) %}
+
+    {# ---------- Titre et cartouche ---------- #}
+    <section class="entete-projet">
+        <div class="entete-projet-titre">
+            <p class="fil"><a href="{{ path('projet_liste') }}">Projets</a><span>/</span><span class="fil-actuel">{{ projet.reference }}</span></p>
+            <h1 class="titre-geant {{ projet.nom|length > 14 ? 'titre-long' }}">{{ projet.nom }}</h1>
+            {% if projet.description %}<p class="chapeau">{{ projet.description }}</p>{% endif %}
+            <div class="actions">
+                <a href="{{ path('projet_modifier', {id: projet.id}) }}" class="bouton bouton-secondaire">Modifier le projet</a>
+                <form method="post" action="{{ path('projet_supprimer', {id: projet.id}) }}"
+                      onsubmit="return confirm('Supprimer ce projet et toutes ses tâches ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('supprimer_projet_' ~ projet.id) }}">
+                    <button class="bouton-discret">Supprimer</button>
+                </form>
             </div>
-        {% else %}
-            <div class="flash flash-erreur">Projet non réalisable.</div>
-        {% endif %}
-    {% endif %}
-
-    {# ---------- Tableau des tâches ---------- #}
-    <section>
-        <div class="titre-section">
-            <h2>Tâches</h2>
-            <a href="{{ path('tache_nouvelle', {id: projet.id}) }}" class="bouton">+ Ajouter une tâche</a>
         </div>
 
-        {% if projet.taches is empty %}
-            <p class="vide">Ce projet n'a pas encore de tâche.</p>
-        {% else %}
-            <table class="tableau">
-                <thead>
-                    <tr>
-                        <th>N°</th>
-                        <th>Tâche</th>
-                        <th>Durée</th>
-                        <th>Précédentes</th>
-                        <th title="Date de début au plus tôt">Au plus tôt</th>
-                        <th title="Date de début au plus tard">Au plus tard</th>
-                        <th>Marge</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for tache in projet.taches %}
-                        {# Résultats Python de cette tâche (vide si le calcul a échoué) #}
-                        {% set r = resultat.taches[tache.id] ?? null %}
-                        <tr class="{{ r and r.critique ? 'critique' }}">
-                            <td>{{ loop.index }}</td>
-                            <td>{{ tache.description }}</td>
-                            <td>{{ tache.duree }}</td>
-                            <td>{{ tache.precedentes|map(p => p.description)|join(', ') ?: '—' }}</td>
-                            <td>{{ r.tot ?? '—' }}</td>
-                            <td>{{ r.tard ?? '—' }}</td>
-                            <td>{{ r.marge ?? '—' }}</td>
-                            <td class="actions-ligne">
-                                <a href="{{ path('tache_modifier', {id: tache.id}) }}">Modifier</a>
-                                <form method="post" action="{{ path('tache_supprimer', {id: tache.id}) }}"
-                                      onsubmit="return confirm('Supprimer la tâche « {{ tache.description|e('js') }} » ?');">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('supprimer_tache_' ~ tache.id) }}">
-                                    <button class="lien-danger">Supprimer</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <p class="discret legende"><span class="pastille-critique"></span> Tâche critique (marge nulle) : tout retard retarde la fin du projet.</p>
-        {% endif %}
+        {# Cartouche : les chiffres du projet, comme sur un plan technique #}
+        <dl class="cartouche">
+            <div class="cartouche-principal">
+                <dt>Durée minimale</dt>
+                <dd>
+                    {% if resultat.realisable %}
+                        <span class="cartouche-chiffre">{{ resultat.duree }}</span><span>unités de temps</span>
+                    {% else %}
+                        <span class="cartouche-chiffre cartouche-vide">—</span>
+                    {% endif %}
+                </dd>
+            </div>
+            <div><dt>Tâches</dt><dd class="chiffre">{{ nbTaches }}</dd></div>
+            <div class="cartouche-critiques"><dt>Critiques</dt><dd class="chiffre">{{ resultat.realisable ? nbCritiques : '—' }}</dd></div>
+            <div><dt>Contraintes</dt><dd class="chiffre">{{ projet.contraintes|length }}</dd></div>
+            <div>
+                <dt>État</dt>
+                {% if resultat.realisable %}
+                    <dd class="etat">Réalisable</dd>
+                {% elseif vide %}
+                    <dd class="etat etat-vide">À compléter</dd>
+                {% else %}
+                    <dd class="etat etat-impossible">Non réalisable</dd>
+                {% endif %}
+            </div>
+        </dl>
     </section>
 
-    {# ---------- Diagramme de Gantt (en CSS pur, sans bibliothèque) ---------- #}
-    {% if resultat.realisable and resultat.duree > 0 %}
-        <section>
-            <h2>Diagramme de Gantt</h2>
-            <div class="gantt">
-                {% for tache in projet.taches %}
-                    {% set r = resultat.taches[tache.id] ?? null %}
-                    {% if r %}
-                        <div class="gantt-ligne">
-                            <span class="gantt-nom">{{ tache.description }}</span>
-                            <div class="gantt-piste">
-                                {# Position et largeur en % de la durée totale du projet #}
-                                <div class="gantt-barre {{ r.critique ? 'critique' }}"
-                                     style="left: {{ r.tot / resultat.duree * 100 }}%; width: {{ tache.duree / resultat.duree * 100 }}%"
-                                     title="{{ tache.description }} : de {{ r.tot }} à {{ r.tot + tache.duree }}"></div>
-                            </div>
-                        </div>
-                    {% endif %}
+    {# ---------- Erreur : ce qui bloque et comment le corriger ---------- #}
+    {% if not vide and resultat.erreur %}
+        <div class="alerte" role="alert">
+            <p class="alerte-titre">Le planning ne peut pas être calculé</p>
+            <p>{{ resultat.erreur }}</p>
+            <p class="alerte-aide">Vérifiez les précédentes et les contraintes des tâches citées : l'une d'elles crée une boucle ou une exigence impossible.</p>
+        </div>
+    {% endif %}
+
+    {# ---------- Chemin critique ---------- #}
+    {% if chemin is not empty %}
+        <section class="chemin" aria-label="Chemin critique">
+            <span class="etiquette etiquette-critique">Chemin critique</span>
+            <ol>
+                {% for c in chemin %}
+                    <li><span class="reference">{{ c.tache.reference }}</span> <strong>{{ c.tache.description }}</strong></li>
                 {% endfor %}
-                <div class="gantt-axe"><span>0</span><span>{{ resultat.duree }}</span></div>
-            </div>
-            {# TODO : afficher aussi la marge (barre hachurée jusqu'à la date au plus tard) #}
+            </ol>
         </section>
     {% endif %}
 
-    {# ---------- Contraintes supplémentaires (partie P2) ---------- #}
-    <section>
-        <div class="titre-section">
-            <h2>Contraintes supplémentaires</h2>
-            {% if projet.taches is not empty %}
-                <a href="{{ path('contrainte_nouvelle', {id: projet.id}) }}" class="bouton bouton-secondaire">+ Ajouter une contrainte</a>
+    {# ---------- Planning ---------- #}
+    {% if resultat.realisable and resultat.duree > 0 %}
+        <section aria-labelledby="titre-planning">
+            <div class="entete-section">
+                <h2 id="titre-planning">Planning</h2>
+                {{ include('_legende.html.twig') }}
+            </div>
+            <div class="feuille feuille-planning">
+                {{ include('_gantt.html.twig') }}
+            </div>
+        </section>
+    {% endif %}
+
+    {# ---------- Tâches ---------- #}
+    <section aria-labelledby="titre-taches">
+        <div class="entete-section">
+            <h2 id="titre-taches">Tâches</h2>
+            <a href="{{ path('tache_nouvelle', {id: projet.id}) }}" class="bouton">{{ include('_plus.html.twig') }}Ajouter une tâche</a>
+        </div>
+
+        {% if vide %}
+            <p class="feuille vide">Ce projet n'a pas encore de tâche. Ajoutez la première pour lancer le calcul du planning.</p>
+        {% else %}
+            <div class="feuille tableau-cadre">
+                <table class="taches">
+                    <thead>
+                        <tr>
+                            <th scope="col">Réf.</th>
+                            <th scope="col">Tâche</th>
+                            <th scope="col" class="nombre">Durée</th>
+                            <th scope="col">Après</th>
+                            <th scope="col" class="nombre">Au plus tôt</th>
+                            <th scope="col" class="nombre">Au plus tard</th>
+                            <th scope="col" class="nombre">Marge</th>
+                            <th scope="col"><span class="lecteur-ecran">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tache in projet.taches %}
+                            {# Résultats de cette tâche (vide si le calcul a échoué) #}
+                            {% set r = resultat.taches[tache.id] ?? null %}
+                            <tr class="{{ r and r.critique ? 'critique' }}">
+                                <td class="reference">{{ tache.reference }}</td>
+                                <td class="taches-nom">{{ tache.description }}</td>
+                                <td class="nombre">{{ tache.duree }}</td>
+                                <td class="taches-apres">{{ tache.precedentes|map(p => p.reference)|join(', ') ?: '—' }}</td>
+                                <td class="nombre">{{ r.tot ?? '—' }}</td>
+                                <td class="nombre">{{ r.tard ?? '—' }}</td>
+                                <td class="nombre">
+                                    {% if r %}<span class="marge">{{ r.critique ? '0 · critique' : '+' ~ r.marge }}</span>{% else %}—{% endif %}
+                                </td>
+                                <td>
+                                    <div class="actions-ligne">
+                                        <a href="{{ path('tache_modifier', {id: tache.id}) }}" title="Modifier {{ tache.description }}" aria-label="Modifier {{ tache.description }}">{{ _self.icone_modifier() }}</a>
+                                        <form method="post" action="{{ path('tache_supprimer', {id: tache.id}) }}"
+                                              onsubmit="return confirm('Supprimer la tâche « {{ tache.description|e('js') }} » ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('supprimer_tache_' ~ tache.id) }}">
+                                            <button title="Supprimer {{ tache.description }}" aria-label="Supprimer {{ tache.description }}">{{ _self.icone_supprimer() }}</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+
+    {# ---------- Contraintes ---------- #}
+    <section aria-labelledby="titre-contraintes">
+        <div class="entete-section">
+            <h2 id="titre-contraintes">Contraintes</h2>
+            {% if not vide %}
+                <a href="{{ path('contrainte_nouvelle', {id: projet.id}) }}" class="bouton bouton-secondaire">{{ include('_plus.html.twig') }}Ajouter une contrainte</a>
             {% endif %}
         </div>
 
         {% if projet.contraintes is empty %}
-            <p class="discret">Aucune contrainte en plus des précédences.</p>
+            <p class="feuille vide">Aucune contrainte : seules les précédences s'appliquent.</p>
         {% else %}
-            <ul class="liste-contraintes">
+            <div class="contraintes">
                 {% for c in projet.contraintes %}
-                    <li>
-                        <span>
-                            <strong>{{ c.libelleType }}</strong> :
-                            {{ c.tacheA }}{% if c.tacheB %} / {{ c.tacheB }}{% endif %}
-                            {% if c.valeur is not null %} (valeur {{ c.valeur }}){% endif %}
-                        </span>
-                        <span class="actions-ligne">
-                            <a href="{{ path('contrainte_modifier', {id: c.id}) }}">Modifier</a>
+                    <article class="feuille contrainte">
+                        <span class="etiquette">{{ c.libelleType }}</span>
+                        <div class="actions-ligne">
+                            <a href="{{ path('contrainte_modifier', {id: c.id}) }}" title="Modifier la contrainte" aria-label="Modifier la contrainte">{{ _self.icone_modifier() }}</a>
                             <form method="post" action="{{ path('contrainte_supprimer', {id: c.id}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('supprimer_contrainte_' ~ c.id) }}">
-                                <button class="lien-danger">Supprimer</button>
+                                <button title="Supprimer la contrainte" aria-label="Supprimer la contrainte">{{ _self.icone_supprimer() }}</button>
                             </form>
-                        </span>
-                    </li>
+                        </div>
+                        <p class="contrainte-formule">{{ _self.formule(c) }}</p>
+                        <p class="contrainte-phrase">{{ _self.phrase(c) }}</p>
+                    </article>
                 {% endfor %}
-            </ul>
+            </div>
         {% endif %}
     </section>
 {% endblock %}

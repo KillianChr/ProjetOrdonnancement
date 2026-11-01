@@ -1,28 +1,52 @@
-{# Page d'accueil : liste des projets. #}
+{# Registre des projets : durée, chiffres clés et aperçu du planning de chacun. #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Projets — Ordonnancement{% endblock %}
 
 {% block body %}
-    <h1>Projets</h1>
-
-    {% if projets is empty %}
-        <div class="vide">
-            <p>Aucun projet pour l'instant.</p>
-            <a href="{{ path('projet_nouveau') }}" class="bouton">Créer le premier projet</a>
+    <section class="entete-registre">
+        <div>
+            <span class="etiquette">Registre</span>
+            <h1 class="titre-geant">Projets</h1>
+            <p class="chapeau">Chaque projet est calculé par la méthode des potentiels : dates au plus tôt et au plus tard, marges et chemin critique.</p>
         </div>
-    {% else %}
-        <div class="grille-projets">
-            {% for projet in projets %}
-                <a href="{{ path('projet_detail', {id: projet.id}) }}" class="carte">
-                    <h2>{{ projet.nom }}</h2>
-                    {% if projet.description %}<p>{{ projet.description }}</p>{% endif %}
-                    <p class="discret">
-                        {{ projet.taches|length }} tâche{{ projet.taches|length > 1 ? 's' }}
-                        · créé le {{ projet.dateCreation|date('d/m/Y') }}
-                    </p>
+        <p class="registre-total"><span class="chiffre-cle">{{ lignes|length }}</span> projet{{ lignes|length > 1 ? 's' }}</p>
+    </section>
+
+    <section class="registre">
+        {% if lignes is not empty %}
+            <div class="registre-entete etiquette" aria-hidden="true">
+                <span>Réf.</span><span>Projet</span><span>Planning</span><span>Durée</span><span>Tâches</span><span>Critiques</span><span>Contraintes</span><span>Créé le</span>
+            </div>
+        {% endif %}
+        <div class="registre-liste">
+            {% for ligne in lignes %}
+                {% set p = ligne.projet %}
+                {% set r = ligne.resultat %}
+                <a href="{{ path('projet_detail', {id: p.id}) }}" class="feuille registre-ligne">
+                    <span class="reference registre-ref">{{ p.reference }}</span>
+                    <span class="registre-nom">
+                        <strong>{{ p.nom }}</strong>
+                        {% if p.description %}<span>{{ p.description }}</span>{% endif %}
+                    </span>
+                    {% if r.realisable %}
+                        {{ include('_apercu.html.twig', {projet: p, resultat: r}) }}
+                        <span class="registre-duree"><span class="chiffre-cle">{{ r.duree }}</span> u</span>
+                    {% else %}
+                        <span class="registre-impossible">{{ p.taches is empty ? 'Aucune tâche' : 'Non réalisable' }}</span>
+                        <span class="registre-duree">—</span>
+                    {% endif %}
+                    <span class="chiffre registre-valeur" data-libelle="Tâches">{{ p.taches|length }}</span>
+                    <span class="chiffre registre-valeur registre-critiques" data-libelle="Critiques">{{ r.taches|filter(t => t.critique)|length }}</span>
+                    <span class="chiffre registre-valeur" data-libelle="Contraintes">{{ p.contraintes|length }}</span>
+                    <span class="chiffre registre-date">{{ p.dateCreation|date('d.m.Y') }}</span>
                 </a>
             {% endfor %}
+
+            <a href="{{ path('projet_nouveau') }}" class="registre-nouveau">
+                <span class="bouton-icone">{{ include('_plus.html.twig') }}</span>
+                Nouveau projet : nommez-le, puis ajoutez ses tâches et leurs précédences.
+            </a>
         </div>
-    {% endif %}
+    </section>
 {% endblock %}
