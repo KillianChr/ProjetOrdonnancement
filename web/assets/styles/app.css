@@ -2,7 +2,7 @@
    Ordonnancement — système de design « Cote »
    La cote, c'est la mesure portée sur un plan : on lit ici des durées, des dates et des écarts.
 
-   - Encre sur papier. L'orange signal ne sert qu'au chemin critique et aux erreurs.
+   - Encre sur papier. Le fuchsia signal ne sert qu'au chemin critique et aux erreurs.
    - Tout écran qui montre des dates porte une règle graduée.
    - Schibsted Grotesk pour les textes, Martian Mono pour les nombres et les références.
    - Contrastes forts, filets d'un pixel, aucune ombre ni transparence.
@@ -20,9 +20,9 @@
     --graphite: #5e6066;
     --trait: #d8d6cf;
     --trait-leger: #eceae4;
-    --signal: #ff4f00;                /* barres, liens, pastilles : jamais de petit texte */
-    --signal-texte: #b23a00;          /* critique en petit texte (AA sur papier) */
-    --signal-pale: #ffe3d6;
+    --signal: #c026d3;                /* barres, liens, pastilles : jamais de petit texte */
+    --signal-texte: #86198f;          /* critique en petit texte (AA sur papier) */
+    --signal-pale: #fae8ff;
 
     /* Angles */
     --rayon-feuille: 6px;
@@ -726,7 +726,7 @@ ol, ul { margin: 0; padding: 0; list-style: none; }
 
 /* Panneau « Lecture » : la contrainte expliquée, sur une plaque d'encre */
 .lecture {
-    --cote-lecture: #ff6a26;
+    --cote-lecture: #e879f9;
     flex: 1 1 420px;
     max-width: 560px;
     min-width: 0;

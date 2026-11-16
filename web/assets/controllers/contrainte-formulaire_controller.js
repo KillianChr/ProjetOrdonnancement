@@ -10,7 +10,7 @@ import { Controller } from '@hotwired/stimulus';
  */
 const SIGMA = 'σ';
 const CREME = '#F3F2EE';
-const SIGNAL = '#FF4F00';
+const SIGNAL = '#C026D3';
 
 // Doit rester synchronisé avec Contrainte::TYPES_A_DEUX_TACHES (PHP)
 const DEUX_TACHES = ['apres_debut', 'precedence', 'debut_max_apres_fin', 'chevauchement'];
